@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BHEL SAP Portal — Login</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <div class="logo">
+      <div class="logo-icon">BHEL</div>
+      <h1>BHEL SAP Portal
+        <span>Bharat Heavy Electricals Limited</span>
+      </h1>
+    </div>
+    <h2>Employee Sign In</h2>
+    <div class="form-group">
+      <label for="emp">Employee ID</label>
+      <input type="text" id="emp" placeholder="e.g. EMP1001" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label for="pwd">Password</label>
+      <input type="password" id="pwd" placeholder="Enter your password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-full btn-lg" onclick="login()">Sign In →</button>
+    <p class="error-msg" id="err-msg">Invalid Employee ID or Password.</p>
+    <p style="margin-top:18px;font-size:.8rem;color:var(--text-light);text-align:center;">
+      For access issues, contact your module administrator.
+    </p>
+  </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:5000";
+
+async function login() {
+  const employee_id = document.getElementById("emp").value.trim();
+  const password    = document.getElementById("pwd").value;
+  const errEl       = document.getElementById("err-msg");
+  errEl.classList.remove("visible");
+
+  if (!employee_id || !password) {
+    errEl.textContent = "Please enter both Employee ID and Password.";
+    errEl.classList.add("visible");
+    return;
+  }
+
+  try {
+    const res  = await fetch(`${API}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ employee_id, password }),
+    });
+    const data = await res.json();
+
+    if (data.status === "success") {
+      sessionStorage.setItem("bhel_user", JSON.stringify(data));
+
+      if (data.role === "SUPER_ADMIN") {
+        window.location.href = "pages/super_admin.html";
+      } else if (data.role === "MODULE_ADMIN") {
+        window.location.href = "pages/module_admin.html";
+      } else {
+        window.location.href = "pages/user_dashboard.html";
+      }
+    } else {
+      errEl.textContent = data.message || "Invalid credentials.";
+      errEl.classList.add("visible");
+    }
+  } catch {
+    errEl.textContent = "Cannot connect to server. Please try again.";
+    errEl.classList.add("visible");
+  }
+}
+
+// Allow Enter key
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("pwd").addEventListener("keydown", e => {
+    if (e.key === "Enter") login();
+  });
+});
+</script>
+</body>
+</html>
