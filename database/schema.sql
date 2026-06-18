@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS departments (
     department_id   INT AUTO_INCREMENT PRIMARY KEY,
     department_name VARCHAR(100) NOT NULL,
     sap_module      VARCHAR(50)  NOT NULL,   -- e.g. FI, HR, MM, SD, PP
+    description     TEXT,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

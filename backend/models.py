@@ -122,7 +122,7 @@ class Query(db.Model):
     updated_at    = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     poster   = db.relationship("User",         foreign_keys=[posted_by])
-    comments = db.relationship("QueryComment", backref="query", lazy=True,
+    comments = db.relationship("QueryComment", backref="parent_query", lazy=True,
                                order_by="QueryComment.created_at")
 
     def to_dict(self, include_comments=False, viewer_role=None):

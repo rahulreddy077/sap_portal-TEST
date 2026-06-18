@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BHEL SAP Portal — Q&A Forum</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- Q&A Toolbar -->
+  <div class="filter-bar">
+    <input type="text" id="query-search" class="search-input" placeholder="Search questions or keywords..." oninput="filterQueries()">
+    
+    <select id="query-status-filter" onchange="filterQueries()">
+      <option value="">All Statuses</option>
+      <option value="OPEN">Open Queries</option>
+      <option value="ANSWERED">Answered Queries</option>
+      <option value="CLOSED">Closed Queries</option>
+    </select>
+
+    <select id="query-dept-filter" style="display: none;" onchange="filterQueries()">
+      <!-- Populated dynamically for SUPER_ADMIN -->
+    </select>
+
+    <button class="btn btn-primary" onclick="openAddQueryModal()">
+      ➕ Post a Query
+    </button>
+  </div>
+
+  <!-- Queries Container -->
+  <div class="query-list" id="queryList">
+    <div class="empty-state">
+      <div class="empty-icon">💬</div>
+      <p>Loading discussions and questions...</p>
+    </div>
+  </div>
+
+  <!-- Add Query Modal -->
+  <div class="modal-overlay" id="add-query-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Ask a Question</h3>
+        <button class="modal-close" onclick="closeModal('add-query-modal')">×</button>
+      </div>
+      <form id="add-query-form" onsubmit="saveQuery(event)">
+        <div class="form-group">
+          <label for="query-title">Query Title / Summary</label>
+          <input type="text" id="query-title" required placeholder="Describe your issue in one sentence">
+        </div>
+
+        <div class="form-group">
+          <label for="query-body">Detailed Description</label>
+          <textarea id="query-body" required rows="5" placeholder="Include error messages, SAP Transaction code, and exact steps taken..."></textarea>
+        </div>
+
+        <div class="profile-grid">
+          <div class="form-group">
+            <label for="query-priority">Priority</label>
+            <select id="query-priority">
+              <option value="LOW">Low (General Query)</option>
+              <option value="MEDIUM" selected>Medium (Standard Issue)</option>
+              <option value="HIGH">High (System Blocker / Error)</option>
+            </select>
+          </div>
+          <div class="form-group" id="query-dept-group" style="display: none;">
+            <label for="query-dept">SAP Module / Dept</label>
+            <select id="query-dept">
+              <!-- Dynamically populated for Super Admin -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group flex flex-center gap-8" style="margin-top: 10px;">
+          <input type="checkbox" id="query-anonymous" value="1" style="width: auto;">
+          <label for="query-anonymous" style="display: inline; margin-bottom: 0;">Post Anonymously</label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('add-query-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Post Query</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Query Detail Modal (Q&A Thread) -->
+  <div class="modal-overlay" id="detail-modal">
+    <div class="modal" style="width: 700px; max-height: 95vh;">
+      <div class="modal-header">
+        <h3 class="modal-title">Query Discussion</h3>
+        <button class="modal-close" onclick="closeModal('detail-modal')">×</button>
+      </div>
+      <div id="detail-container">
+        <!-- Rendered dynamically -->
+      </div>
+      
+      <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border);">
+
+      <!-- Replies Section -->
+      <h3 class="card-title">Answers & Comments</h3>
+      <div class="comment-thread" id="comment-thread-list">
+        <!-- Dynamic comments -->
+      </div>
+
+      <!-- Reply Form -->
+      <form id="comment-form" onsubmit="postComment(event)" style="margin-top: 24px;">
+        <input type="hidden" id="comment-query-id">
+        <div class="form-group">
+          <label for="comment-body">Your Response</label>
+          <textarea id="comment-body" required rows="3" placeholder="Provide troubleshooting suggestions or answers..."></textarea>
+        </div>
+        <div class="modal-footer" style="border: none; margin-top: 10px; padding-top: 0;">
+          <button type="submit" class="btn btn-primary">Submit Reply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/query.js"></script>
+</body>
+</html>

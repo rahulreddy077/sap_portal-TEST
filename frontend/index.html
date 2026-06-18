@@ -58,13 +58,7 @@ async function login() {
     if (data.status === "success") {
       sessionStorage.setItem("bhel_user", JSON.stringify(data));
 
-      if (data.role === "SUPER_ADMIN") {
-        window.location.href = "pages/super_admin.html";
-      } else if (data.role === "MODULE_ADMIN") {
-        window.location.href = "pages/module_admin.html";
-      } else {
-        window.location.href = "pages/user_dashboard.html";
-      }
+      window.location.href = "pages/dashboard.html";
     } else {
       errEl.textContent = data.message || "Invalid credentials.";
       errEl.classList.add("visible");

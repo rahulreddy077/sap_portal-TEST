@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BHEL SAP Portal — Dashboard</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- Stat Cards Grid -->
+  <div class="stats-grid">
+    <div class="stat-card info">
+      <div class="stat-icon">📄</div>
+      <div class="stat-value" id="manuals">0</div>
+      <div class="stat-label">SAP Manuals</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-icon">🎬</div>
+      <div class="stat-value" id="videos">0</div>
+      <div class="stat-label">Video Tutorials</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-icon">💬</div>
+      <div class="stat-value" id="queries">0</div>
+      <div class="stat-label">Open Queries</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-icon">❓</div>
+      <div class="stat-value" id="faqs">0</div>
+      <div class="stat-label">Active FAQs</div>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Grid -->
+  <div class="dash-grid">
+    <!-- Profile Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Employee Profile</h3>
+      </div>
+      <div class="flex flex-center gap-12 mb-16" style="flex-direction: column; text-align: center;">
+        <div class="profile-avatar" id="prof-avatar">U</div>
+        <h2 id="prof-name" style="font-size: 1.25rem; margin-top: 8px;">Employee Name</h2>
+        <span class="badge badge-primary" id="prof-role">Role</span>
+      </div>
+      <div class="profile-grid">
+        <div>
+          <span class="text-small text-muted font-bold">Employee ID</span>
+          <p id="prof-id">—</p>
+        </div>
+        <div>
+          <span class="text-small text-muted font-bold">SAP Module / Dept</span>
+          <p id="prof-dept">—</p>
+        </div>
+        <div>
+          <span class="text-small text-muted font-bold">Designation</span>
+          <p id="prof-designation">—</p>
+        </div>
+        <div>
+          <span class="text-small text-muted font-bold">Phone Contact</span>
+          <p id="prof-phone">—</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Links Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Quick SAP Access T-Codes</h3>
+      </div>
+      <p class="text-muted text-small mb-16">Frequently used SAP shortcuts for your module:</p>
+      <div class="quick-links" id="quick-links-list">
+        <div class="empty-state">
+          <p>No transaction codes configured for your department yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/dashboard.js"></script>
+</body>
+</html>

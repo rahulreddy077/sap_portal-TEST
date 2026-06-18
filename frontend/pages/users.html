@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BHEL SAP Portal — Users</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- Users Toolbar -->
+  <div class="filter-bar">
+    <input type="text" id="user-search" class="search-input" placeholder="Search by name or employee ID..." oninput="filterUsers()">
+    
+    <select id="user-role-filter" onchange="filterUsers()">
+      <option value="">All Roles</option>
+      <option value="USER">Standard Users</option>
+      <option value="MODULE_ADMIN">Module Admins</option>
+      <option value="SUPER_ADMIN">Super Admins</option>
+    </select>
+
+    <select id="user-dept-filter" style="display: none;" onchange="filterUsers()">
+      <!-- Populated dynamically for SUPER_ADMIN -->
+    </select>
+
+    <button class="btn btn-primary" onclick="openAddUserModal()">
+      ➕ Create New User
+    </button>
+  </div>
+
+  <!-- Users Table Layout -->
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Designation</th>
+            <th>Department</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <tr>
+            <td colspan="8" style="text-align: center;" class="text-muted">Loading employee profiles...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add/Edit User Modal -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="user-modal-title">Create New Profile</h3>
+        <button class="modal-close" onclick="closeModal('user-modal')">×</button>
+      </div>
+      <form id="user-form" onsubmit="saveUser(event)">
+        <input type="hidden" id="edit-user-id">
+
+        <div class="profile-grid">
+          <div class="form-group">
+            <label for="user-emp-id">Employee ID</label>
+            <input type="text" id="user-emp-id" required placeholder="e.g. EMP1004">
+          </div>
+          <div class="form-group">
+            <label for="user-name">Full Name</label>
+            <input type="text" id="user-name" required placeholder="e.g. Rajesh Sharma">
+          </div>
+        </div>
+
+        <div class="profile-grid">
+          <div class="form-group">
+            <label for="user-pwd">Password</label>
+            <input type="password" id="user-pwd" placeholder="Leave blank to keep old password">
+          </div>
+          <div class="form-group">
+            <label for="user-email">Email Address</label>
+            <input type="email" id="user-email" placeholder="e.g. name@bhel.in">
+          </div>
+        </div>
+
+        <div class="profile-grid">
+          <div class="form-group">
+            <label for="user-role">System Role</label>
+            <select id="user-role" required onchange="toggleFormDeptLock()">
+              <option value="USER">Standard Department User</option>
+              <option value="MODULE_ADMIN">Module Administrator</option>
+              <option value="SUPER_ADMIN">Super Administrator</option>
+            </select>
+          </div>
+          <div class="form-group" id="form-dept-group">
+            <label for="user-dept">SAP Module / Dept</label>
+            <select id="user-dept">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div class="profile-grid">
+          <div class="form-group">
+            <label for="user-designation">Designation</label>
+            <input type="text" id="user-designation" placeholder="e.g. Deputy Manager">
+          </div>
+          <div class="form-group">
+            <label for="user-phone">Phone Number</label>
+            <input type="text" id="user-phone" placeholder="e.g. 9876543210">
+          </div>
+        </div>
+
+        <div class="form-group flex flex-center gap-8" id="active-checkbox-group" style="display: none; margin-top: 10px;">
+          <input type="checkbox" id="user-active" value="1" style="width: auto;">
+          <label for="user-active" style="display: inline; margin-bottom: 0;">Profile Active Status</label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('user-modal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/common.js"></script>
+  <script src="../js/users.js"></script>
+</body>
+</html>

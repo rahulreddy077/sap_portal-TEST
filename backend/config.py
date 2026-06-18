@@ -1,7 +1,7 @@
 import os
 
 DB_USER     = os.environ.get("DB_USER",     "root")
-DB_PASSWORD = os.environ.get("DB_PASSWORD", "test")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "BVRreddy2006")
 DB_HOST     = os.environ.get("DB_HOST",     "localhost")
 DB_NAME     = os.environ.get("DB_NAME",     "bhel_sap_portal")
 
