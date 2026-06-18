@@ -1,4 +1,4 @@
-const RENDER_BACKEND_URL = "https://sap-portal-test-backend.onrender.com"; // Replace this with your actual Render URL when deployed
+const RENDER_BACKEND_URL = "https://sap-portal-backend-tnc3.onrender.com"; // Replace this with your actual Render URL when deployed
 
 const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
     ? "http://localhost:5000"
