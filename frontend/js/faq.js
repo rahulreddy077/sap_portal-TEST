@@ -101,6 +101,20 @@ function filterFaqs() {
   loadFaqs();
 }
 
+function filterFAQs(query) {
+  const q = query.trim().toLowerCase();
+  const faqItems = document.querySelectorAll(".faq-item");
+  faqItems.forEach(item => {
+    const questionText = item.querySelector(".faq-question").innerText.toLowerCase();
+    const answerText = item.querySelector(".faq-answer").innerText.toLowerCase();
+    if (questionText.includes(q) || answerText.includes(q)) {
+      item.style.display = "block";
+    } else {
+      item.style.display = "none";
+    }
+  });
+}
+
 function initLocalFaqAccordion() {
   document.querySelectorAll(".faq-question").forEach(q => {
     q.addEventListener("click", (e) => {

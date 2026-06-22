@@ -19,7 +19,10 @@ window.onload = async function() {
     const userDeptSelect = document.getElementById("user-dept");
 
     depts.forEach(d => {
-      departmentsMap[d.department_id] = `${d.department_name} (${d.sap_module})`;
+      departmentsMap[d.department_id] = {
+        name: d.department_name,
+        module: d.sap_module
+      };
     });
 
     // Populate Super Admin filter
@@ -69,21 +72,23 @@ async function loadUsers() {
 
     const tbody = document.getElementById("userTableBody");
     if (list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">No user profiles found matching filters.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center;">No user profiles found matching filters.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = list.map(u => {
       const isSelf = u.user_id === user.user_id;
       const statusLbl = u.is_active ? `<span class="badge badge-success">Active</span>` : `<span class="badge badge-gray">Inactive</span>`;
-      const deptName = departmentsMap[u.department_id] || "Super Admin (Global)";
+      
+      const deptInfo = departmentsMap[u.department_id] || { name: "Super Admin (Global)", module: "—" };
 
       return `
         <tr>
           <td><strong>${u.employee_id}</strong></td>
           <td>${u.name} ${isSelf ? ' <span class="text-muted text-small">(You)</span>' : ''}</td>
           <td>${u.designation || '—'}</td>
-          <td>${deptName}</td>
+          <td>${deptInfo.name}</td>
+          <td>${deptInfo.module}</td>
           <td>${statusBadge(u.role)}</td>
           <td>${statusLbl}</td>
           <td>${fmtDateTime(u.last_login)}</td>
@@ -101,7 +106,10 @@ async function loadUsers() {
   }
 }
 
-function filterUsers() {
+function filterUsers(query) {
+  if (typeof query === "string") {
+    document.getElementById("user-search").value = query;
+  }
   loadUsers();
 }
 
@@ -226,5 +234,42 @@ async function deleteUser(id) {
     loadUsers();
   } catch {
     toast("Failed to delete user profile", "error");
+  }
+}
+
+function triggerCsvSelect() {
+  document.getElementById("csv-file-input").click();
+}
+
+async function uploadCsvFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const user = getSession();
+  if (!user) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("admin_id", user.user_id);
+  formData.append("admin_role", user.role);
+
+  toast("Uploading and parsing CSV file...", "info");
+  try {
+    const res = await apiUpload("/users/import-csv", formData, "POST");
+    if (res.status === "success" || res.imported_count !== undefined) {
+      toast(`Import successful! Added/updated ${res.imported_count} users.`, "success");
+      if (res.errors && res.errors.length > 0) {
+        console.warn("CSV import warnings:", res.errors);
+        toast(`Imported with ${res.errors.length} warnings. See console.`, "warning");
+      }
+      loadUsers();
+    } else {
+      toast(res.error || "Failed to import CSV", "error");
+    }
+  } catch (e) {
+    console.error("CSV import error:", e);
+    toast(e.message || "Failed to upload and import CSV file", "error");
+  } finally {
+    input.value = "";
   }
 }

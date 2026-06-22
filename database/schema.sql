@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS library_items (
     title           VARCHAR(255) NOT NULL,
     description     TEXT,
     item_type       ENUM('MANUAL','VIDEO','TRANSACTION') NOT NULL,
-    file_path       VARCHAR(500),           -- for MANUAL (PDF) or VIDEO (mp4/url)
+    file_path       VARCHAR(500),           -- for MANUAL (PDF)
+    video_path      VARCHAR(500),           -- for MANUAL (VIDEO tutorial)
     transaction_code VARCHAR(20),           -- for TRANSACTION items  e.g. F-02
     version         VARCHAR(20) DEFAULT '1.0',
     version_notes   TEXT,
@@ -71,6 +72,7 @@ CREATE TABLE IF NOT EXISTS library_item_versions (
     item_id         INT NOT NULL,
     version         VARCHAR(20) NOT NULL,
     file_path       VARCHAR(500),
+    video_path      VARCHAR(500),
     version_notes   TEXT,
     uploaded_by     INT,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,

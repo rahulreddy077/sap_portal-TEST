@@ -60,6 +60,7 @@ class LibraryItem(db.Model):
     description      = db.Column(db.Text)
     item_type        = db.Column(db.Enum("MANUAL", "VIDEO", "TRANSACTION"), nullable=False)
     file_path        = db.Column(db.String(500))
+    video_path       = db.Column(db.String(500))
     transaction_code = db.Column(db.String(20))
     version          = db.Column(db.String(20), default="1.0")
     version_notes    = db.Column(db.Text)
@@ -80,6 +81,7 @@ class LibraryItem(db.Model):
             "description":      self.description,
             "item_type":        self.item_type,
             "file_path":        self.file_path,
+            "video_path":       self.video_path,
             "transaction_code": self.transaction_code,
             "version":          self.version,
             "version_notes":    self.version_notes,
@@ -99,6 +101,7 @@ class LibraryItemVersion(db.Model):
     item_id       = db.Column(db.Integer, db.ForeignKey("library_items.item_id"), nullable=False)
     version       = db.Column(db.String(20), nullable=False)
     file_path     = db.Column(db.String(500))
+    video_path    = db.Column(db.String(500))
     version_notes = db.Column(db.Text)
     uploaded_by   = db.Column(db.Integer, db.ForeignKey("users.user_id"))
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)

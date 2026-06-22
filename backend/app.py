@@ -1,5 +1,7 @@
 import os
 import json
+import csv
+import io
 from datetime import datetime
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -203,6 +205,90 @@ def delete_user(user_id):
     return jsonify({"message": "User deleted"})
 
 
+@app.route("/users/import-csv", methods=["POST"])
+def import_users_csv():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    file = request.files["file"]
+    if not file or not file.filename.endswith(".csv"):
+        return jsonify({"error": "Invalid file format. Must be CSV."}), 400
+        
+    admin_id = request.form.get("admin_id")
+    admin_role = request.form.get("admin_role", "SUPER_ADMIN")
+    
+    stream = io.StringIO(file.stream.read().decode("utf-8"), newline=None)
+    csv_reader = csv.reader(stream)
+    
+    header = next(csv_reader, None)
+    
+    imported_count = 0
+    errors = []
+    
+    for row in csv_reader:
+        if not row or not any(row):
+            continue
+        try:
+            username = row[0].strip()
+            email = row[1].strip() if len(row) > 1 and row[1].strip() else None
+            password = row[2].strip() if len(row) > 2 and row[2].strip() else None
+            role = row[3].strip().upper() if len(row) > 3 and row[3].strip() else "USER"
+            
+            if role not in ("USER", "MODULE_ADMIN", "SUPER_ADMIN"):
+                role = "USER"
+                
+            module_name = row[4].strip() if len(row) > 4 and row[4].strip() else None
+            
+            if not username or not password:
+                errors.append(f"Row skipped: missing username or password. Row data: {row}")
+                continue
+            
+            dept_id = None
+            if module_name:
+                module_upper = module_name.upper()
+                dept = Department.query.filter(
+                    (db.func.upper(Department.sap_module) == module_upper) |
+                    (db.func.upper(Department.department_name).like(f"%{module_upper}%"))
+                ).first()
+                if dept:
+                    dept_id = dept.department_id
+            
+            existing_user = User.query.filter_by(employee_id=username).first()
+            if existing_user:
+                existing_user.name = username.replace("_", " ").replace("-", " ").title()
+                existing_user.email = email
+                existing_user.password_hash = password
+                existing_user.role = role
+                existing_user.department_id = dept_id
+            else:
+                new_user = User(
+                    employee_id=username,
+                    name=username.replace("_", " ").replace("-", " ").title(),
+                    email=email,
+                    password_hash=password,
+                    role=role,
+                    department_id=dept_id
+                )
+                db.session.add(new_user)
+            
+            imported_count += 1
+        except Exception as e:
+            errors.append(f"Error parsing row {row}: {str(e)}")
+            
+    try:
+        log_action(admin_id, admin_role, "BULK_IMPORT_USERS", "USER", None, f"Imported {imported_count} users from CSV")
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Database commit failed: {str(e)}"}), 500
+        
+    return jsonify({
+        "status": "success",
+        "imported_count": imported_count,
+        "errors": errors
+    })
+
+
 # ── Library ───────────────────────────────────────────────────────────────────
 
 @app.route("/library", methods=["GET"])
@@ -248,14 +334,27 @@ def create_library_item():
         return jsonify({"error": "Missing required fields"}), 400
 
     file_path = None
+    video_path = None
+    
     if "file" in request.files:
         f = request.files["file"]
         if f and allowed_file(f.filename):
             fname = secure_filename(f.filename)
-            subdir = "manuals" if data["item_type"] == "MANUAL" else "videos"
+            subdir = "videos" if data.get("item_type") == "VIDEO" else "manuals"
             save_path = os.path.join(app.config["UPLOAD_FOLDER"], subdir, fname)
             f.save(save_path)
-            file_path = f"uploads/{subdir}/{fname}"
+            if data.get("item_type") == "VIDEO":
+                video_path = f"uploads/{subdir}/{fname}"
+            else:
+                file_path = f"uploads/{subdir}/{fname}"
+
+    if "video_file" in request.files:
+        vf = request.files["video_file"]
+        if vf and allowed_file(vf.filename):
+            vfname = secure_filename(vf.filename)
+            vsave_path = os.path.join(app.config["UPLOAD_FOLDER"], "videos", vfname)
+            vf.save(vsave_path)
+            video_path = f"uploads/videos/{vfname}"
 
     item = LibraryItem(
         department_id    = int(data["department_id"]),
@@ -263,6 +362,7 @@ def create_library_item():
         description      = data.get("description"),
         item_type        = data["item_type"],
         file_path        = file_path,
+        video_path       = video_path,
         transaction_code = data.get("transaction_code"),
         version          = data.get("version", "1.0"),
         version_notes    = data.get("version_notes"),
@@ -300,6 +400,7 @@ def update_library_item(item_id):
         item_id       = item.item_id,
         version       = item.version,
         file_path     = item.file_path,
+        video_path    = item.video_path,
         version_notes = item.version_notes,
         uploaded_by   = item.uploaded_by,
     )
@@ -313,10 +414,21 @@ def update_library_item(item_id):
         f = request.files["file"]
         if f and allowed_file(f.filename):
             fname = secure_filename(f.filename)
-            subdir = "manuals" if item.item_type == "MANUAL" else "videos"
+            subdir = "videos" if item.item_type == "VIDEO" else "manuals"
             save_path = os.path.join(app.config["UPLOAD_FOLDER"], subdir, fname)
             f.save(save_path)
-            item.file_path = f"uploads/{subdir}/{fname}"
+            if item.item_type == "VIDEO":
+                item.video_path = f"uploads/{subdir}/{fname}"
+            else:
+                item.file_path = f"uploads/{subdir}/{fname}"
+
+    if "video_file" in request.files:
+        vf = request.files["video_file"]
+        if vf and allowed_file(vf.filename):
+            vfname = secure_filename(vf.filename)
+            vsave_path = os.path.join(app.config["UPLOAD_FOLDER"], "videos", vfname)
+            vf.save(vsave_path)
+            item.video_path = f"uploads/videos/{vfname}"
 
     admin_id = int(data.get("updated_by", 0))
     log_action(admin_id, data.get("admin_role", "MODULE_ADMIN"),
@@ -353,6 +465,7 @@ def get_item_versions(item_id):
         "version_id":   v.version_id,
         "version":      v.version,
         "file_path":    v.file_path,
+        "video_path":   v.video_path,
         "version_notes": v.version_notes,
         "uploaded_by":  v.uploaded_by,
         "uploader_name": v.uploader.name if v.uploader else None,
@@ -628,6 +741,24 @@ def mark_all_read():
     q.update({"is_read": 1}, synchronize_session=False)
     db.session.commit()
     return jsonify({"message": "All marked as read"})
+
+
+@app.route("/notifications/clear-all", methods=["PUT"])
+def clear_all_notifications():
+    data    = request.json or {}
+    user_id = data.get("user_id")
+    dept_id = data.get("department_id")
+    q = Notification.query
+    if user_id:
+        q = q.filter(
+            db.or_(Notification.user_id == int(user_id),
+                   db.and_(Notification.department_id == int(dept_id),
+                           Notification.user_id.is_(None)))
+        )
+        q.delete(synchronize_session=False)
+        db.session.commit()
+        return jsonify({"message": "All notifications cleared"})
+    return jsonify({"error": "user_id is required"}), 400
 
 
 # ── Bookmarks ─────────────────────────────────────────────────────────────────

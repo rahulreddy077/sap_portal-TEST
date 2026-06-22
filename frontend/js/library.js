@@ -71,16 +71,18 @@ async function loadLibrary() {
                      (user.role === "MODULE_ADMIN" && user.department_id === item.department_id);
 
       let actionBtn = "";
-      if (item.item_type === "MANUAL") {
-        actionBtn = `<a href="${API}/${item.file_path}" target="_blank" class="btn btn-outline btn-sm">📄 Open PDF</a>`;
-      } else if (item.item_type === "VIDEO") {
-        actionBtn = `<button class="btn btn-primary btn-sm" onclick="viewVideo('${item.file_path}', '${item.title.replace(/'/g, "\\'")}')">🎬 Watch Video</button>`;
-      } else if (item.item_type === "TRANSACTION") {
+      if (item.item_type === "TRANSACTION") {
         actionBtn = `<div class="txn-code">${item.transaction_code}</div>`;
+      } else {
+        const hasPdf = item.file_path;
+        const hasVid = item.video_path || (item.item_type === "VIDEO" ? item.file_path : null);
+        const pdfBtn = hasPdf ? `<a href="${API}/${item.file_path}" target="_blank" class="btn btn-outline btn-sm">📄 Open PDF</a>` : "";
+        const videoBtn = hasVid ? `<button class="btn btn-primary btn-sm" onclick="viewVideo('${hasVid}', '${item.title.replace(/'/g, "\\'")}')">🎬 Watch Video</button>` : "";
+        actionBtn = `<div style="display: flex; gap: 8px; flex-wrap: wrap;">${pdfBtn} ${videoBtn}</div>`;
       }
 
       return `
-        <div class="lib-card type-${item.item_type.toLowerCase() === 'manual' ? 'manual' : item.item_type.toLowerCase() === 'video' ? 'video' : 'txn'}">
+        <div class="lib-card type-${item.item_type.toLowerCase() === 'manual' || item.item_type.toLowerCase() === 'video' ? 'manual' : 'txn'}">
           <div class="lib-card-header">
             <div class="lib-card-icon">${libIcon(item.item_type)}</div>
             <div style="flex: 1;">
@@ -89,6 +91,7 @@ async function loadLibrary() {
             </div>
             ${statusBadge(item.item_type)}
           </div>
+          ${item.transaction_code ? `<div style="margin: 6px 0;"><span class="txn-code" style="font-size: 0.8rem; padding: 2px 8px;">T-Code: ${item.transaction_code}</span></div>` : ""}
           <p class="lib-card-desc">${item.description || 'No description provided.'}</p>
           
           <div class="lib-card-footer">
@@ -114,33 +117,31 @@ async function loadLibrary() {
   }
 }
 
-function filterLibrary() {
+function filterLibrary(query) {
+  if (typeof query === "string") {
+    document.getElementById("lib-search").value = query;
+  }
   loadLibrary();
 }
 
 function toggleItemTypeForm() {
   const type = document.getElementById("item-type").value;
-  const fileGroup = document.getElementById("file-field-group");
-  const fileInput = document.getElementById("item-file");
+  const pdfGroup = document.getElementById("pdf-field-group");
+  const videoGroup = document.getElementById("video-field-group");
   const tcodeGroup = document.getElementById("tcode-field-group");
+  const tcodeLabel = document.getElementById("tcode-label");
+  const tcodeVal = document.getElementById("item-tcode");
 
   if (type === "TRANSACTION") {
-    fileGroup.style.display = "none";
-    fileInput.required = false;
-    tcodeGroup.style.display = "block";
-    document.getElementById("item-tcode").required = true;
+    pdfGroup.style.display = "none";
+    videoGroup.style.display = "none";
+    tcodeLabel.innerText = "SAP Transaction Code (T-Code) - Required";
+    tcodeVal.required = true;
   } else {
-    fileGroup.style.display = "block";
-    tcodeGroup.style.display = "none";
-    document.getElementById("item-tcode").required = false;
-
-    if (type === "MANUAL") {
-      document.getElementById("file-label").innerText = "Upload PDF Document";
-      fileInput.accept = ".pdf";
-    } else {
-      document.getElementById("file-label").innerText = "Upload MP4 Video File";
-      fileInput.accept = ".mp4,.webm,.mov,.avi";
-    }
+    pdfGroup.style.display = "block";
+    videoGroup.style.display = "block";
+    tcodeLabel.innerText = "SAP Transaction Code (T-Code) - Optional";
+    tcodeVal.required = false;
   }
 }
 
@@ -149,6 +150,8 @@ function openAddModal() {
   document.getElementById("edit-item-id").value = "";
   document.getElementById("modal-title").innerText = "Add Training Media";
   toggleItemTypeForm();
+  document.getElementById("item-file").value = "";
+  document.getElementById("item-video-file").value = "";
   openModal("item-modal");
 }
 
@@ -160,7 +163,9 @@ async function openEditModal(id) {
     
     document.getElementById("item-title").value = item.title;
     document.getElementById("item-desc").value = item.description || "";
-    document.getElementById("item-type").value = item.item_type;
+    
+    // Convert VIDEO items to MANUAL type in UI since they can have both
+    document.getElementById("item-type").value = (item.item_type === "VIDEO") ? "MANUAL" : item.item_type;
     
     if (document.getElementById("item-dept-group").style.display !== "none") {
       document.getElementById("item-dept").value = item.department_id;
@@ -171,8 +176,8 @@ async function openEditModal(id) {
     document.getElementById("item-notes").value = item.version_notes || "";
 
     toggleItemTypeForm();
-    // Edit uploads are optional (can keep old files)
-    document.getElementById("item-file").required = false;
+    document.getElementById("item-file").value = "";
+    document.getElementById("item-video-file").value = "";
     openModal("item-modal");
   } catch {
     toast("Error loading item details", "error");
@@ -196,8 +201,7 @@ async function saveLibraryItem(event) {
     deptId = document.getElementById("item-dept").value;
   }
 
-  // Use multipart/form-data for PDFs/Videos, JSON for T-codes
-  if (type === "MANUAL" || type === "VIDEO") {
+  if (type === "MANUAL") {
     const formData = new FormData();
     formData.append("department_id", deptId);
     formData.append("title", title);
@@ -206,11 +210,23 @@ async function saveLibraryItem(event) {
     formData.append("version", version);
     formData.append("version_notes", version_notes);
     
+    const tcode = document.getElementById("item-tcode").value.trim();
+    if (tcode) {
+      formData.append("transaction_code", tcode);
+    }
+
     const fileField = document.getElementById("item-file");
     if (fileField.files[0]) {
       formData.append("file", fileField.files[0]);
-    } else if (!id) {
-      toast("Please select a training file to upload.", "warning");
+    }
+    
+    const videoField = document.getElementById("item-video-file");
+    if (videoField.files[0]) {
+      formData.append("video_file", videoField.files[0]);
+    }
+
+    if (!id && !fileField.files[0] && !videoField.files[0] && !tcode) {
+      toast("Please upload a PDF document, video tutorial, or specify a T-code.", "warning");
       return;
     }
 
@@ -233,7 +249,7 @@ async function saveLibraryItem(event) {
       toast("File upload failed", "error");
     }
   } else {
-    // Transaction
+    // Transaction code only
     const payload = {
       department_id: parseInt(deptId),
       title,
@@ -309,7 +325,8 @@ async function viewVersions(itemId) {
           <td>${v.uploader_name || 'System'}</td>
           <td>${fmtDateTime(v.created_at)}</td>
           <td>
-            ${v.file_path ? `<a href="${API}/${v.file_path}" target="_blank" class="btn btn-outline btn-sm">Download</a>` : '—'}
+            ${(v.file_path ? `<a href="${API}/${v.file_path}" target="_blank" class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 0.8rem; margin-right: 4px;">PDF</a>` : "") + 
+              (v.video_path ? `<a href="${API}/${v.video_path}" target="_blank" class="btn btn-primary btn-sm" style="padding: 2px 6px; font-size: 0.8rem;">Video</a>` : "") || "—"}
           </td>
         </tr>
       `).join('');

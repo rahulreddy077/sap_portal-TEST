@@ -90,14 +90,21 @@ document.addEventListener("click", e => {
 });
 
 // ── Date helpers ──────────────────────────────────────────────
+function parseUTCDate(iso) {
+  if (!iso) return new Date();
+  if (!iso.endsWith("Z") && !iso.includes("+") && (iso.lastIndexOf("-") < 10)) {
+    return new Date(iso + "Z");
+  }
+  return new Date(iso);
+}
 function fmtDate(iso) {
   if (!iso) return "—";
-  const d = new Date(iso);
+  const d = parseUTCDate(iso);
   return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 function fmtDateTime(iso) {
   if (!iso) return "—";
-  const d = new Date(iso);
+  const d = parseUTCDate(iso);
   return d.toLocaleString("en-IN", {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit"
@@ -105,7 +112,7 @@ function fmtDateTime(iso) {
 }
 function timeAgo(iso) {
   if (!iso) return "";
-  const diff = (Date.now() - new Date(iso)) / 1000;
+  const diff = (Date.now() - parseUTCDate(iso)) / 1000;
   if (diff < 60)     return "just now";
   if (diff < 3600)   return `${Math.floor(diff/60)}m ago`;
   if (diff < 86400)  return `${Math.floor(diff/3600)}h ago`;
@@ -185,14 +192,18 @@ function renderLayout(activeId) {
   const title = pageTitles[activeId] || "BHEL SAP Portal";
 
   // Build Sidebar HTML
+  const logoPath = (window.location.pathname.includes("/pages/")) 
+      ? "../css/images/bhel_logo_official.png" 
+      : "css/images/bhel_logo_official.png";
+
   let sidebarHtml = `
     <div class="sidebar">
       <div class="sidebar-header">
-        <div class="brand">
-          <div class="brand-icon">BHEL</div>
+        <div class="brand" style="display: flex; align-items: center;">
+          <img src="${logoPath}" alt="BHEL Logo" style="height: 38px; width: 38px; margin-right: 10px; border-radius: 4px; object-fit: contain;">
           <div>
-            <span class="brand-name">SAP Portal</span>
-            <span class="brand-sub">Bharat Heavy Electricals Ltd.</span>
+            <span class="brand-name" style="font-size: 11px; font-weight: 700; display: block; color: var(--gold-primary); text-transform: uppercase; line-height: 1.2;">SAP Knowledge Management Portal</span>
+            <span class="brand-sub" style="font-size: 10px; opacity: 0.8; display: block; line-height: 1.2;">BHEL Ltd. Hyderabad</span>
           </div>
         </div>
       </div>
@@ -239,10 +250,17 @@ function renderLayout(activeId) {
 
   // Build Topbar HTML
   const topbarHtml = `
-    <header class="topbar">
-      <button class="icon-btn" id="sidebar-toggle">☰</button>
-      <h1 class="topbar-title">${title}</h1>
-      ${user.department_name ? `<span class="topbar-module">${user.sap_module || "SAP"}</span>` : ""}
+    <header class="topbar" style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="icon-btn" id="sidebar-toggle">☰</button>
+        <h1 class="topbar-title">${title}</h1>
+        ${user.department_name ? `<span class="topbar-module">${user.sap_module || "SAP"}</span>` : ""}
+      </div>
+      
+      <div class="topbar-search" style="flex: 1; max-width: 400px; margin: 0 20px; position: relative;">
+        <input type="text" id="global-search" placeholder="Search page content..." oninput="triggerPageSearch(this.value)">
+      </div>
+      
       <div class="topbar-actions">
         <button class="icon-btn" id="notif-btn" onclick="openNotifModal()">
           🔔
@@ -266,8 +284,9 @@ function renderLayout(activeId) {
             <p>No notifications</p>
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline btn-sm" onclick="markNotificationsAllRead()">Mark all as read</button>
+        <div class="modal-footer" style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button class="btn btn-outline btn-sm" onclick="markNotificationsAllRead()">Mark all read</button>
+          <button class="btn btn-danger btn-sm" onclick="clearAllNotifications()">Clear All</button>
           <button class="btn btn-primary btn-sm" onclick="closeModal('notif-modal')">Close</button>
         </div>
       </div>
@@ -343,6 +362,40 @@ async function markNotificationsAllRead() {
     openNotifModal();
     toast("All notifications marked as read", "success");
   } catch {}
+}
+
+async function clearAllNotifications() {
+  const user = getSession();
+  if (!user) return;
+  try {
+    const response = await fetch(`${API}/notifications/clear-all`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: user.user_id, department_id: user.department_id })
+    });
+    const res = await response.json();
+    loadNotifCount();
+    openNotifModal();
+    toast(res.message || "Notifications cleared", "success");
+  } catch (e) {
+    toast("Could not clear notifications", "error");
+  }
+}
+
+function triggerPageSearch(query) {
+  const q = query.trim().toLowerCase();
+  if (typeof filterLibrary === "function") {
+    filterLibrary(q);
+  }
+  if (typeof filterQueries === "function") {
+    filterQueries(q);
+  }
+  if (typeof filterFAQs === "function") {
+    filterFAQs(q);
+  }
+  if (typeof filterUsers === "function") {
+    filterUsers(q);
+  }
 }
 
 // ── Page Layout Auto Initialization ─────────────────────────────

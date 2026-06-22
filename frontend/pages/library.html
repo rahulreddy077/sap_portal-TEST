@@ -59,9 +59,8 @@
         <div class="form-group">
           <label for="item-type">Item Type</label>
           <select id="item-type" required onchange="toggleItemTypeForm()">
-            <option value="MANUAL">PDF Manual</option>
-            <option value="VIDEO">Video Tutorial</option>
-            <option value="TRANSACTION">SAP Transaction Code (T-Code)</option>
+            <option value="MANUAL">SAP Manual / Media Resource</option>
+            <option value="TRANSACTION">SAP Transaction Code (T-Code Only)</option>
           </select>
         </div>
 
@@ -73,16 +72,23 @@
           </select>
         </div>
 
-        <!-- File field (for manuals/videos) -->
-        <div class="form-group" id="file-field-group">
-          <label for="item-file" id="file-label">Upload PDF Document</label>
-          <input type="file" id="item-file">
-          <p class="text-small text-muted mt-8" id="file-help">Maximum upload size is 100 MB.</p>
+        <!-- PDF file upload field -->
+        <div class="form-group" id="pdf-field-group">
+          <label for="item-file" id="file-label">Upload PDF Document (Optional)</label>
+          <input type="file" id="item-file" accept=".pdf">
+          <p class="text-small text-muted mt-8">Upload step-by-step documentation in PDF format.</p>
+        </div>
+
+        <!-- Video file upload field -->
+        <div class="form-group" id="video-field-group">
+          <label for="item-video-file" id="video-label">Upload Video Tutorial (Optional)</label>
+          <input type="file" id="item-video-file" accept="video/*">
+          <p class="text-small text-muted mt-8">Upload MP4/video tutorial.</p>
         </div>
 
         <!-- T-Code fields -->
-        <div class="form-group" id="tcode-field-group" style="display: none;">
-          <label for="item-tcode">SAP Transaction Code (T-Code)</label>
+        <div class="form-group" id="tcode-field-group">
+          <label for="item-tcode" id="tcode-label">SAP Transaction Code (T-Code) - Optional</label>
           <input type="text" id="item-tcode" placeholder="e.g. F-02, FS10N">
         </div>
 

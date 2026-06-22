@@ -790,3 +790,26 @@ tbody tr:hover { background: #f5f8ff; }
   background: #e3ecff;
   color: var(--primary);
 }
+
+/* Enhancements */
+.sidebar-footer .nav-item {
+  color: #ffffff !important;
+}
+.sidebar-footer .nav-item .nav-icon {
+  color: #ffffff !important;
+}
+.topbar-search input {
+  width: 100%;
+  padding: 8px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  background-color: var(--bg);
+  color: var(--text);
+  font-size: .9rem;
+  transition: border-color .15s, background-color .15s;
+}
+.topbar-search input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background-color: #fff;
+}

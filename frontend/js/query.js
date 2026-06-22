@@ -88,7 +88,10 @@ async function loadQueries() {
   }
 }
 
-function filterQueries() {
+function filterQueries(query) {
+  if (typeof query === "string") {
+    document.getElementById("query-search").value = query;
+  }
   loadQueries();
 }
 

@@ -26,6 +26,10 @@
     <button class="btn btn-primary" onclick="openAddUserModal()">
       ➕ Create New User
     </button>
+    <button class="btn btn-outline" onclick="triggerCsvSelect()">
+      📤 Import CSV File
+    </button>
+    <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="uploadCsvFile(this)">
   </div>
 
   <!-- Users Table Layout -->
@@ -38,6 +42,7 @@
             <th>Name</th>
             <th>Designation</th>
             <th>Department</th>
+            <th>SAP Module</th>
             <th>Role</th>
             <th>Status</th>
             <th>Last Login</th>
@@ -46,7 +51,7 @@
         </thead>
         <tbody id="userTableBody">
           <tr>
-            <td colspan="8" style="text-align: center;" class="text-muted">Loading employee profiles...</td>
+            <td colspan="9" style="text-align: center;" class="text-muted">Loading employee profiles...</td>
           </tr>
         </tbody>
       </table>
