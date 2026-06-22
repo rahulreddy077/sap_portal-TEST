@@ -2,7 +2,10 @@
    BHEL SAP Portal — Shared Utilities & Layout Engine
    ============================================================ */
 
-const API = "http://127.0.0.1:5000";
+const RENDER_BACKEND_URL = "https://sap-portal-backend-tnc3.onrender.com";
+const API = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    ? "http://localhost:5000"
+    : RENDER_BACKEND_URL;
 
 // ── Session helpers ───────────────────────────────────────────
 function getSession() {
