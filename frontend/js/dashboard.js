@@ -54,9 +54,13 @@ async function loadDashboard() {
       faqContainer.innerHTML = `<p class="text-muted text-small">Could not load FAQs.</p>`;
     }
 
-    // 3. Fetch Transaction codes for Quick Links (if in a department)
-    if (user.department_id) {
-      const txns = await apiGet(`/library?department_id=${user.department_id}&item_type=TRANSACTION`);
+    // 3. Fetch Transaction codes for Quick Links (if in a department or SUPER_ADMIN)
+    if (user.department_id || user.role === "SUPER_ADMIN") {
+      let url = "/library?item_type=TRANSACTION";
+      if (user.role !== "SUPER_ADMIN" && user.department_id) {
+        url += `&department_id=${user.department_id}`;
+      }
+      const txns = await apiGet(url);
       const linksContainer = document.getElementById("quick-links-list");
       if (txns.length > 0) {
         linksContainer.innerHTML = txns.map(t => `
