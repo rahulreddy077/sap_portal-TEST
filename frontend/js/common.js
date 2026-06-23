@@ -7,6 +7,62 @@ const API = (window.location.hostname === "localhost" || window.location.hostnam
     ? "http://localhost:5000"
     : RENDER_BACKEND_URL;
 
+// ── Theme Engine ──────────────────────────────────────────────
+const THEME_KEY = "bhel_theme";  // 'light' | 'dark' | 'device'
+
+// Apply saved theme IMMEDIATELY to avoid flash of wrong theme
+(function() {
+  const saved = localStorage.getItem(THEME_KEY) || "device";
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const effectiveDark = (saved === "dark") || (saved === "device" && prefersDark);
+  if (effectiveDark) document.documentElement.setAttribute("data-theme", "dark");
+  else document.documentElement.removeAttribute("data-theme");
+})();
+
+function applyTheme(mode) {
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const effectiveDark = (mode === "dark") || (mode === "device" && prefersDark);
+  if (effectiveDark) document.documentElement.setAttribute("data-theme", "dark");
+  else document.documentElement.removeAttribute("data-theme");
+  // Update toggle button icon
+  const icons = { light: "☀️", dark: "🌙", device: "💻" };
+  const btn = document.getElementById("theme-toggle-btn");
+  if (btn) btn.textContent = icons[mode] || "💻";
+  // Update active class on options
+  document.querySelectorAll(".theme-option").forEach(el => {
+    el.classList.toggle("active", el.dataset.mode === mode);
+  });
+}
+
+function setTheme(mode) {
+  localStorage.setItem(THEME_KEY, mode);
+  applyTheme(mode);
+  closeThemeMenu();
+}
+
+function toggleThemeMenu() {
+  const dd = document.getElementById("theme-dropdown");
+  if (!dd) return;
+  dd.classList.toggle("open");
+}
+function closeThemeMenu() {
+  const dd = document.getElementById("theme-dropdown");
+  if (dd) dd.classList.remove("open");
+}
+// Close dropdown when clicking outside
+document.addEventListener("click", e => {
+  const wrap = document.getElementById("theme-toggle-wrap");
+  if (wrap && !wrap.contains(e.target)) closeThemeMenu();
+});
+
+// Listen for OS theme changes (for 'device' mode)
+if (window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    const saved = localStorage.getItem(THEME_KEY) || "device";
+    if (saved === "device") applyTheme("device");
+  });
+}
+
 // ── Session helpers ───────────────────────────────────────────
 function getSession() {
   const s = sessionStorage.getItem("bhel_user");
@@ -268,6 +324,21 @@ function renderLayout(activeId) {
       </div>
       
       <div class="topbar-actions">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-wrap" id="theme-toggle-wrap">
+          <button class="theme-toggle-btn icon-btn" id="theme-toggle-btn" onclick="toggleThemeMenu()" title="Toggle theme">💻</button>
+          <div class="theme-dropdown" id="theme-dropdown">
+            <button class="theme-option" data-mode="light" onclick="setTheme('light')">
+              <span class="theme-icon">☀️</span> Light Mode
+            </button>
+            <button class="theme-option" data-mode="dark" onclick="setTheme('dark')">
+              <span class="theme-icon">🌙</span> Dark Mode
+            </button>
+            <button class="theme-option" data-mode="device" onclick="setTheme('device')">
+              <span class="theme-icon">💻</span> Device Default
+            </button>
+          </div>
+        </div>
         <button class="icon-btn" id="notif-btn" onclick="openNotifModal()">
           🔔
           <span class="notif-dot" id="notif-dot" style="display: none;"></span>
@@ -313,6 +384,10 @@ function renderLayout(activeId) {
     </div>
     ${notifModalHtml}
   `;
+
+  // Re-apply theme after DOM rebuild so button icon + active states are correct
+  const savedTheme = localStorage.getItem(THEME_KEY) || "device";
+  applyTheme(savedTheme);
 }
 
 // ── Notification modal logic ──────────────────────────────────
