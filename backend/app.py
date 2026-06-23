@@ -395,6 +395,13 @@ def create_library_item():
     if not all(k in data for k in required):
         return jsonify({"error": "Missing required fields"}), 400
 
+    admin_id = int(data["uploaded_by"])
+    admin_role = data.get("admin_role", "USER")
+    if admin_role == "MODULE_ADMIN":
+        admin_user = User.query.get(admin_id)
+        if admin_user and admin_user.department_id != int(data["department_id"]):
+            return jsonify({"error": "Module Admin can only upload to their own department"}), 403
+
     file_path = None
     video_path = None
     
@@ -466,6 +473,13 @@ def update_library_item(item_id):
     else:
         data = request.json or {}
 
+    admin_id = int(data.get("updated_by", 0))
+    admin_role = data.get("admin_role", "USER")
+    if admin_role == "MODULE_ADMIN":
+        admin_user = User.query.get(admin_id)
+        if admin_user and admin_user.department_id != item.department_id:
+            return jsonify({"error": "Module Admin can only update items in their own department"}), 403
+
     # Save old version
     old_version = LibraryItemVersion(
         item_id       = item.item_id,
@@ -530,6 +544,14 @@ def update_library_item(item_id):
 def delete_library_item(item_id):
     item = LibraryItem.query.get_or_404(item_id)
     data = request.json or {}
+
+    admin_id = data.get("admin_id")
+    admin_role = data.get("admin_role", "USER")
+    if admin_role == "MODULE_ADMIN":
+        admin_user = User.query.get(admin_id)
+        if admin_user and admin_user.department_id != item.department_id:
+            return jsonify({"error": "Module Admin can only delete items in their own department"}), 403
+
     item.is_active = 0
     log_action(data.get("admin_id"), data.get("admin_role", "MODULE_ADMIN"),
                "DELETE_LIBRARY_ITEM", "LIBRARY_ITEM", item_id, f"Deleted: {item.title}")
