@@ -18,6 +18,12 @@ window.onload = async function() {
     deptFilter.innerHTML = optionsHtml;
     deptFilter.style.display = "inline-block";
     
+    // Pre-select user's own department as default view
+    // (they can change the filter to "All Departments" or any other module)
+    if (user.department_id) {
+      deptFilter.value = String(user.department_id);
+    }
+    
     itemDeptSelect.innerHTML = formOptionsHtml;
     
     // Target department select is visible only to SUPER_ADMIN on upload forms

@@ -5,13 +5,16 @@ async function loadDashboard() {
   if (!user) return;
 
   try {
-    // 1. Fetch dashboard stats
+    // 1. Fetch GLOBAL library stats (all modules — not dept filtered)
+    // Users/Module Admins can access all modules' files, so show total count
+    const libStats = await apiGet("/library/stats");
+    document.getElementById("manuals").innerText = libStats.total;
+    document.getElementById("videos").innerText = libStats.videos;
+
+    // 2. Fetch DEPT-SPECIFIC stats for queries and FAQs (relevant to user's work)
     const stats = await apiGet(
       `/dashboard/stats?department_id=${user.department_id || ""}&user_id=${user.user_id}&role=${user.role}`
     );
-
-    document.getElementById("manuals").innerText = stats.library.total;
-    document.getElementById("videos").innerText = stats.library.videos;
     document.getElementById("queries").innerText = stats.queries.open;
     document.getElementById("faqs").innerText = stats.faqs;
 
