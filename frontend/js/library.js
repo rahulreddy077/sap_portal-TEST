@@ -122,30 +122,28 @@ async function loadLibrary() {
       const fPaths = parseFilePaths(item.file_path);
       let docActionsHtml = "";
       if (fPaths.length === 1) {
-        docActionsHtml = `<a href="${API}/${fPaths[0].path}" target="_blank" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.8rem;" onclick="logAccess(${item.item_id})">📄 View File</a>`;
+        docActionsHtml = `<a href="${API}/${fPaths[0].path}" target="_blank" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.8rem; width: 110px; text-align: center; display: inline-flex; justify-content: center; align-items: center;" onclick="logAccess(${item.item_id})">📄 View File</a>`;
       } else if (fPaths.length > 1) {
-        docActionsHtml = `<div style="display: flex; gap: 4px; align-items: center;">` + 
-          fPaths.map((fp, idx) => `<a href="${API}/${fp.path}" target="_blank" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.8rem;" onclick="logAccess(${item.item_id})">📄 Doc ${idx+1}</a>`).join('') + 
+        docActionsHtml = `<div style="display: flex; flex-direction: column; gap: 4px; align-items: center; width: 100%;">` + 
+          fPaths.map((fp, idx) => `<a href="${API}/${fp.path}" target="_blank" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.8rem; width: 110px; text-align: center; display: inline-flex; justify-content: center; align-items: center;" onclick="logAccess(${item.item_id})">📄 Doc ${idx+1}</a>`).join('') + 
           `</div>`;
       }
 
-      const bookmarkBtn = `<button class="btn btn-outline btn-sm btn-icon" onclick="toggleBookmark('LIBRARY_ITEM', ${item.item_id}, this)" style="padding: 4px 8px; font-size: 0.8rem;">🔖 Bookmark</button>`;
-      const revisionsBtn = `<button class="btn btn-outline btn-sm" onclick="viewVersions(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem;">🕒 History</button>`;
+      const bookmarkBtn = `<button class="btn btn-outline btn-sm btn-icon" onclick="toggleBookmark('LIBRARY_ITEM', ${item.item_id}, this)" style="padding: 4px 8px; font-size: 0.8rem; width: 110px; text-align: center; display: inline-flex; justify-content: center; align-items: center;">🔖 Bookmark</button>`;
+      const revisionsBtn = `<button class="btn btn-outline btn-sm" onclick="viewVersions(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem; width: 110px; text-align: center; display: inline-flex; justify-content: center; align-items: center;">🕒 History</button>`;
       
       const adminActionsHtml = canEdit ? `
-        <div style="display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 6px; width: 100%;">
-          <button class="btn btn-accent btn-sm" onclick="openEditModal(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem;">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteLibraryItem(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem;">Delete</button>
+        <div style="display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 4px; width: 110px;">
+          <button class="btn btn-accent btn-sm" onclick="openEditModal(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem; flex: 1; text-align: center; display: inline-flex; justify-content: center; align-items: center;">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLibraryItem(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem; flex: 1; text-align: center; display: inline-flex; justify-content: center; align-items: center;">Delete</button>
         </div>
       ` : "";
 
       const actionsHtml = `
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <div style="display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: nowrap; white-space: nowrap;">
-            ${docActionsHtml}
-            ${bookmarkBtn}
-            ${revisionsBtn}
-          </div>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%;">
+          ${docActionsHtml}
+          ${bookmarkBtn}
+          ${revisionsBtn}
           ${adminActionsHtml}
         </div>
       `;
