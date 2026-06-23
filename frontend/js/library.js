@@ -124,25 +124,29 @@ async function loadLibrary() {
       if (fPaths.length === 1) {
         docActionsHtml = `<a href="${API}/${fPaths[0].path}" target="_blank" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.8rem;" onclick="logAccess(${item.item_id})">📄 View File</a>`;
       } else if (fPaths.length > 1) {
-        docActionsHtml = `<div style="display: flex; flex-direction: column; gap: 4px;">` + 
-          fPaths.map((fp, idx) => `<a href="${API}/${fp.path}" target="_blank" class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 0.75rem; text-align: center; min-width: 90px;" onclick="logAccess(${item.item_id})">📄 Doc ${idx+1}</a>`).join('') + 
+        docActionsHtml = `<div style="display: flex; gap: 4px; align-items: center;">` + 
+          fPaths.map((fp, idx) => `<a href="${API}/${fp.path}" target="_blank" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.8rem;" onclick="logAccess(${item.item_id})">📄 Doc ${idx+1}</a>`).join('') + 
           `</div>`;
       }
 
       const bookmarkBtn = `<button class="btn btn-outline btn-sm btn-icon" onclick="toggleBookmark('LIBRARY_ITEM', ${item.item_id}, this)" style="padding: 4px 8px; font-size: 0.8rem;">🔖 Bookmark</button>`;
       const revisionsBtn = `<button class="btn btn-outline btn-sm" onclick="viewVersions(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem;">🕒 History</button>`;
       
-      const adminActions = canEdit ? `
-        <button class="btn btn-accent btn-sm" onclick="openEditModal(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem;">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteLibraryItem(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem;">Delete</button>
+      const adminActionsHtml = canEdit ? `
+        <div style="display: flex; gap: 6px; justify-content: center; align-items: center; margin-top: 6px; width: 100%;">
+          <button class="btn btn-accent btn-sm" onclick="openEditModal(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem;">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLibraryItem(${item.item_id})" style="padding: 4px 8px; font-size: 0.8rem;">Delete</button>
+        </div>
       ` : "";
 
       const actionsHtml = `
-        <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; align-items: center;">
-          ${docActionsHtml}
-          ${bookmarkBtn}
-          ${revisionsBtn}
-          ${adminActions}
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <div style="display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: nowrap; white-space: nowrap;">
+            ${docActionsHtml}
+            ${bookmarkBtn}
+            ${revisionsBtn}
+          </div>
+          ${adminActionsHtml}
         </div>
       `;
 
