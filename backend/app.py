@@ -126,6 +126,54 @@ def get_departments():
     } for d in depts])
 
 
+# Active users count
+@app.route("/users/active-count", methods=["GET"])
+def get_active_users_count():
+    from datetime import datetime, timedelta
+    cutoff = datetime.utcnow() - timedelta(minutes=15)
+    count = User.query.filter(User.last_login >= cutoff, User.is_active == 1).count()
+    if count == 0:
+         count = 1
+    return jsonify({"active_users": count})
+
+
+# Activity log stats endpoint
+@app.route("/admin/stats", methods=["GET"])
+def get_admin_stats():
+    role = request.args.get("role", "USER")
+    dept_id = request.args.get("department_id")
+    
+    if role not in ("SUPER_ADMIN", "MODULE_ADMIN"):
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    q = AuditLog.query
+    if role == "MODULE_ADMIN" and dept_id:
+        dept_user_ids = [u.user_id for u in User.query.filter_by(department_id=int(dept_id)).all()]
+        q = q.filter(AuditLog.performed_by.in_(dept_user_ids))
+        
+    logs = q.order_by(AuditLog.created_at.desc()).limit(100).all()
+    
+    log_list = []
+    for l in logs:
+        operator = User.query.get(l.performed_by) if l.performed_by else None
+        log_list.append({
+            "log_id": l.log_id,
+            "username": operator.name if operator else "System / Guest",
+            "employee_id": operator.employee_id if operator else "N/A",
+            "role": l.role,
+            "action": l.action,
+            "entity_type": l.entity_type,
+            "entity_id": l.entity_id,
+            "details": l.details,
+            "ip_address": l.ip_address,
+            "created_at": l.created_at.isoformat() if l.created_at else None
+        })
+        
+    return jsonify({
+        "logs": log_list
+    })
+
+
 # ── Users (SUPER_ADMIN) ───────────────────────────────────────────────────────
 
 @app.route("/users", methods=["GET"])
@@ -317,6 +365,20 @@ def get_library():
 def get_library_item(item_id):
     item = LibraryItem.query.get_or_404(item_id)
     item.view_count += 1
+    
+    # Log access details if user_id is passed
+    user_id = request.args.get("user_id")
+    role = request.args.get("role", "USER")
+    if user_id:
+        log_action(
+            performed_by=int(user_id),
+            role=role,
+            action="VIEW_LIBRARY_ITEM",
+            entity_type="LIBRARY_ITEM",
+            entity_id=item_id,
+            details=f"Viewed manual: '{item.title}'" if item.item_type == "MANUAL" else f"Accessed T-code: '{item.transaction_code}'" if item.item_type == "TRANSACTION" else f"Watched video: '{item.title}'"
+        )
+        
     db.session.commit()
     return jsonify(item.to_dict())
 
@@ -337,24 +399,33 @@ def create_library_item():
     video_path = None
     
     if "file" in request.files:
-        f = request.files["file"]
-        if f and allowed_file(f.filename):
-            fname = secure_filename(f.filename)
-            subdir = "videos" if data.get("item_type") == "VIDEO" else "manuals"
-            save_path = os.path.join(app.config["UPLOAD_FOLDER"], subdir, fname)
-            f.save(save_path)
-            if data.get("item_type") == "VIDEO":
-                video_path = f"uploads/{subdir}/{fname}"
-            else:
-                file_path = f"uploads/{subdir}/{fname}"
+        files = request.files.getlist("file")
+        paths = []
+        for f in files:
+            if f and f.filename and allowed_file(f.filename):
+                fname = secure_filename(f.filename)
+                subdir = "videos" if data.get("item_type") == "VIDEO" else "manuals"
+                save_path = os.path.join(app.config["UPLOAD_FOLDER"], subdir, fname)
+                f.save(save_path)
+                paths.append({"name": f.filename, "path": f"uploads/{subdir}/{fname}"})
+        if len(paths) == 1:
+            file_path = paths[0]["path"]
+        elif len(paths) > 1:
+            file_path = json.dumps(paths)
 
     if "video_file" in request.files:
-        vf = request.files["video_file"]
-        if vf and allowed_file(vf.filename):
-            vfname = secure_filename(vf.filename)
-            vsave_path = os.path.join(app.config["UPLOAD_FOLDER"], "videos", vfname)
-            vf.save(vsave_path)
-            video_path = f"uploads/videos/{vfname}"
+        vfiles = request.files.getlist("video_file")
+        vpaths = []
+        for vf in vfiles:
+            if vf and vf.filename and allowed_file(vf.filename):
+                vfname = secure_filename(vf.filename)
+                vsave_path = os.path.join(app.config["UPLOAD_FOLDER"], "videos", vfname)
+                vf.save(vsave_path)
+                vpaths.append({"name": vf.filename, "path": f"uploads/videos/{vfname}"})
+        if len(vpaths) == 1:
+            video_path = vpaths[0]["path"]
+        elif len(vpaths) > 1:
+            video_path = json.dumps(vpaths)
 
     item = LibraryItem(
         department_id    = int(data["department_id"]),
@@ -411,24 +482,33 @@ def update_library_item(item_id):
             setattr(item, field, data[field])
 
     if "file" in request.files:
-        f = request.files["file"]
-        if f and allowed_file(f.filename):
-            fname = secure_filename(f.filename)
-            subdir = "videos" if item.item_type == "VIDEO" else "manuals"
-            save_path = os.path.join(app.config["UPLOAD_FOLDER"], subdir, fname)
-            f.save(save_path)
-            if item.item_type == "VIDEO":
-                item.video_path = f"uploads/{subdir}/{fname}"
-            else:
-                item.file_path = f"uploads/{subdir}/{fname}"
+        files = request.files.getlist("file")
+        paths = []
+        for f in files:
+            if f and f.filename and allowed_file(f.filename):
+                fname = secure_filename(f.filename)
+                subdir = "videos" if item.item_type == "VIDEO" else "manuals"
+                save_path = os.path.join(app.config["UPLOAD_FOLDER"], subdir, fname)
+                f.save(save_path)
+                paths.append({"name": f.filename, "path": f"uploads/{subdir}/{fname}"})
+        if len(paths) == 1:
+            item.file_path = paths[0]["path"]
+        elif len(paths) > 1:
+            item.file_path = json.dumps(paths)
 
     if "video_file" in request.files:
-        vf = request.files["video_file"]
-        if vf and allowed_file(vf.filename):
-            vfname = secure_filename(vf.filename)
-            vsave_path = os.path.join(app.config["UPLOAD_FOLDER"], "videos", vfname)
-            vf.save(vsave_path)
-            item.video_path = f"uploads/videos/{vfname}"
+        vfiles = request.files.getlist("video_file")
+        vpaths = []
+        for vf in vfiles:
+            if vf and vf.filename and allowed_file(vf.filename):
+                vfname = secure_filename(vf.filename)
+                vsave_path = os.path.join(app.config["UPLOAD_FOLDER"], "videos", vfname)
+                vf.save(vsave_path)
+                vpaths.append({"name": vf.filename, "path": f"uploads/videos/{vfname}"})
+        if len(vpaths) == 1:
+            item.video_path = vpaths[0]["path"]
+        elif len(vpaths) > 1:
+            item.video_path = json.dumps(vpaths)
 
     admin_id = int(data.get("updated_by", 0))
     log_action(admin_id, data.get("admin_role", "MODULE_ADMIN"),
@@ -471,6 +551,112 @@ def get_item_versions(item_id):
         "uploader_name": v.uploader.name if v.uploader else None,
         "created_at":   v.created_at.isoformat() if v.created_at else None,
     } for v in versions])
+
+
+@app.route("/library/import-csv", methods=["POST"])
+def import_library_csv():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    file = request.files["file"]
+    if not file or not file.filename.endswith(".csv"):
+        return jsonify({"error": "Invalid file format. Must be CSV."}), 400
+        
+    admin_id = request.form.get("admin_id")
+    admin_role = request.form.get("admin_role", "MODULE_ADMIN")
+    
+    stream = io.StringIO(file.stream.read().decode("utf-8"), newline=None)
+    csv_reader = csv.reader(stream)
+    header = next(csv_reader, None)
+    
+    col_map = {h.strip().lower(): idx for idx, h in enumerate(header)} if header else {}
+    
+    imported_count = 0
+    errors = []
+    
+    for row in csv_reader:
+        if not row or not any(row):
+            continue
+        try:
+            def get_col(name, default_idx):
+                idx = col_map.get(name)
+                if idx is not None and idx < len(row):
+                    return row[idx].strip()
+                elif default_idx < len(row):
+                    return row[default_idx].strip()
+                return None
+
+            title = get_col("title", 0)
+            description = get_col("description", 1)
+            item_type = get_col("item_type", 2)
+            dept_code = get_col("department_code", 3)
+            tcode = get_col("transaction_code", 4)
+            fpath = get_col("file_path", 5)
+            vpath = get_col("video_path", 6)
+            
+            if not title or not item_type or not dept_code:
+                errors.append(f"Row skipped: missing title, item_type, or department_code. Row data: {row}")
+                continue
+                
+            dept_upper = dept_code.upper()
+            dept = Department.query.filter(
+                (db.func.upper(Department.sap_module) == dept_upper) |
+                (db.func.upper(Department.department_name).like(f"%{dept_upper}%"))
+            ).first()
+            
+            if not dept:
+                errors.append(f"Row skipped: department '{dept_code}' not found. Row data: {row}")
+                continue
+                
+            if admin_role == "MODULE_ADMIN":
+                admin_user = User.query.get(admin_id)
+                if admin_user and admin_user.department_id != dept.department_id:
+                    errors.append(f"Row skipped: Module Admin cannot import into department '{dept.department_name}'. Row data: {row}")
+                    continue
+            
+            cleaned_fpath = None
+            if fpath:
+                if "," in fpath:
+                    paths = [p.strip() for p in fpath.split(",") if p.strip()]
+                    cleaned_fpath = json.dumps([{"name": os.path.basename(p), "path": p} for p in paths])
+                else:
+                    cleaned_fpath = fpath
+                    
+            cleaned_vpath = None
+            if vpath:
+                if "," in vpath:
+                    paths = [p.strip() for p in vpath.split(",") if p.strip()]
+                    cleaned_vpath = json.dumps([{"name": os.path.basename(p), "path": p} for p in paths])
+                else:
+                    cleaned_vpath = vpath
+
+            item = LibraryItem(
+                department_id=dept.department_id,
+                title=title,
+                description=description,
+                item_type=item_type.upper(),
+                transaction_code=tcode,
+                file_path=cleaned_fpath,
+                video_path=cleaned_vpath,
+                uploaded_by=int(admin_id) if admin_id else None
+            )
+            db.session.add(item)
+            imported_count += 1
+        except Exception as e:
+            errors.append(f"Error parsing row {row}: {str(e)}")
+            
+    try:
+        log_action(admin_id, admin_role, "BULK_IMPORT_LIBRARY", "LIBRARY_ITEM", None, f"Imported {imported_count} library resources from CSV")
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Database commit failed: {str(e)}"}), 500
+        
+    return jsonify({
+        "status": "success",
+        "imported_count": imported_count,
+        "errors": errors
+    })
 
 
 @app.route("/library/stats", methods=["GET"])
@@ -637,9 +823,17 @@ def query_stats():
 @app.route("/faqs", methods=["GET"])
 def get_faqs():
     dept_id = request.args.get("department_id")
+    search  = request.args.get("search", "")
     q = FAQ.query.filter_by(is_active=1)
     if dept_id:
         q = q.filter_by(department_id=int(dept_id))
+    if search:
+        q = q.filter(
+            db.or_(
+                FAQ.question.ilike(f"%{search}%"),
+                FAQ.answer.ilike(f"%{search}%")
+            )
+        )
     faqs = q.order_by(FAQ.display_order).all()
     return jsonify([f.to_dict() for f in faqs])
 

@@ -273,3 +273,91 @@ async function uploadCsvFile(input) {
     input.value = "";
   }
 }
+
+// Switch between User Directory and Activity Logs tabs
+function switchUsersTab(tab) {
+  const dirTab = document.getElementById("tab-directory");
+  const logsTab = document.getElementById("tab-logs");
+  const dirContent = document.getElementById("tab-content-directory");
+  const logsContent = document.getElementById("tab-content-logs");
+  
+  if (tab === "directory") {
+    dirTab.classList.add("active");
+    dirTab.style.color = "var(--primary)";
+    dirTab.style.borderBottom = "2px solid var(--primary)";
+    
+    logsTab.classList.remove("active");
+    logsTab.style.color = "var(--text-light)";
+    logsTab.style.borderBottom = "none";
+    
+    dirContent.style.display = "block";
+    logsContent.style.display = "none";
+    loadUsers();
+  } else {
+    logsTab.classList.add("active");
+    logsTab.style.color = "var(--primary)";
+    logsTab.style.borderBottom = "2px solid var(--primary)";
+    
+    dirTab.classList.remove("active");
+    dirTab.style.color = "var(--text-light)";
+    dirTab.style.borderBottom = "none";
+    
+    dirContent.style.display = "none";
+    logsContent.style.display = "block";
+    loadActivityLogs();
+  }
+}
+
+// Fetch and display system activity logs from backend
+async function loadActivityLogs() {
+  const user = getSession();
+  if (!user) return;
+  
+  const tbody = document.getElementById("logsTableBody");
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="6" style="text-align: center; padding: 24px;">
+        <div class="spinner" style="margin: 0 auto 12px auto;"></div>
+        Loading activity logs...
+      </td>
+    </tr>`;
+    
+  try {
+    const data = await apiGet(`/admin/stats?role=${user.role}&department_id=${user.department_id || ""}`);
+    const logs = data.logs || [];
+    
+    if (logs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px;">No activity logs recorded yet.</td></tr>`;
+      return;
+    }
+    
+    tbody.innerHTML = logs.map(l => {
+      // Map action names to neat badges
+      let actionBadgeClass = "badge-gray";
+      if (l.action.startsWith("CREATE")) actionBadgeClass = "badge-success";
+      else if (l.action.startsWith("UPDATE")) actionBadgeClass = "badge-info";
+      else if (l.action.startsWith("DELETE")) actionBadgeClass = "badge-danger";
+      else if (l.action.startsWith("VIEW")) actionBadgeClass = "badge-primary";
+      
+      const actionBadge = `<span class="badge ${actionBadgeClass}" style="font-weight:600; font-size:0.75rem;">${l.action}</span>`;
+      
+      return `
+        <tr>
+          <td style="padding: 12px 16px; font-size: 0.85rem; color: var(--text-light);">${fmtDateTime(l.created_at)}</td>
+          <td style="padding: 12px 16px;"><strong>${l.employee_id}</strong></td>
+          <td style="padding: 12px 16px;">${l.username}</td>
+          <td style="padding: 12px 16px;">${statusBadge(l.role)}</td>
+          <td style="padding: 12px 16px;">${actionBadge}</td>
+          <td style="padding: 12px 16px; font-size: 0.85rem;">
+            <div>${l.details || "—"}</div>
+            <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 2px;">IP: ${l.ip_address}</div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+  } catch (err) {
+    console.error("Failed to load activity logs", err);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger); padding: 24px;">Error loading logs from server.</td></tr>`;
+  }
+}

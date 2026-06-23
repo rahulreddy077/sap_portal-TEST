@@ -8,5 +8,5 @@ DB_NAME     = os.environ.get("DB_NAME",     "bhel_sap_portal")
 SECRET_KEY  = os.environ.get("SECRET_KEY",  "bhel-sap-secret-key-change-in-production")
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "..", "frontend", "uploads")
-ALLOWED_EXTENSIONS = {"pdf", "mp4", "mov", "avi", "webm", "png", "jpg", "jpeg"}
+ALLOWED_EXTENSIONS = {"pdf", "mp4", "mov", "avi", "webm", "png", "jpg", "jpeg", "doc", "docx", "xls", "xlsx", "csv", "ppt", "pptx", "txt"}
 MAX_CONTENT_LENGTH = 100 * 1024 * 1024   # 100 MB

@@ -26,14 +26,33 @@
     <button class="btn btn-primary" id="add-item-btn" style="display: none;" onclick="openAddModal()">
       ➕ Add Library Item
     </button>
+    <button class="btn btn-outline" id="import-lib-btn" style="display: none; margin-left: 8px;" onclick="openImportLibModal()">
+      📥 Bulk Upload CSV
+    </button>
   </div>
 
-  <!-- Library Grid -->
-  <div class="lib-grid" id="libraryGrid">
-    <div class="empty-state">
-      <div class="empty-icon">📁</div>
-      <p>Loading SAP manuals and media items...</p>
-    </div>
+  <!-- Library Table -->
+  <div class="table-wrap" id="libraryTableContainer" style="background-color: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow-x: auto; margin-top: 16px;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); background-color: var(--bg); font-size: 0.85rem; text-transform: uppercase; color: var(--text-light);">
+          <th style="padding: 14px 18px; width: 120px;">T-Code</th>
+          <th style="padding: 14px 18px;">Description</th>
+          <th style="padding: 14px 18px; width: 140px;">Module</th>
+          <th style="padding: 14px 18px; width: 140px;">Category</th>
+          <th style="padding: 14px 18px; width: 120px; text-align: center;">Video</th>
+          <th style="padding: 14px 18px; width: 180px; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="libraryTableBody">
+        <tr id="library-loading-row">
+          <td colspan="6" style="text-align: center; padding: 48px 24px; color: var(--text-light);">
+            <div class="spinner" style="margin: 0 auto 12px auto;"></div>
+            Loading training manuals and transaction codes...
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- Add/Edit Item Modal -->
@@ -72,18 +91,18 @@
           </select>
         </div>
 
-        <!-- PDF file upload field -->
+        <!-- file upload field -->
         <div class="form-group" id="pdf-field-group">
-          <label for="item-file" id="file-label">Upload PDF Document (Optional)</label>
-          <input type="file" id="item-file" accept=".pdf">
-          <p class="text-small text-muted mt-8">Upload step-by-step documentation in PDF format.</p>
+          <label for="item-file" id="file-label">Upload Documents (Optional)</label>
+          <input type="file" id="item-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt" multiple>
+          <p class="text-small text-muted mt-8">Upload step-by-step documentation (PDF, Word, Excel, CSV, Text, PowerPoint). Select multiple files if required.</p>
         </div>
 
         <!-- Video file upload field -->
         <div class="form-group" id="video-field-group">
-          <label for="item-video-file" id="video-label">Upload Video Tutorial (Optional)</label>
-          <input type="file" id="item-video-file" accept="video/*">
-          <p class="text-small text-muted mt-8">Upload MP4/video tutorial.</p>
+          <label for="item-video-file" id="video-label">Upload Video Tutorials (Optional)</label>
+          <input type="file" id="item-video-file" accept="video/*" multiple>
+          <p class="text-small text-muted mt-8">Upload MP4 video files. Select multiple files if required.</p>
         </div>
 
         <!-- T-Code fields -->
@@ -147,6 +166,34 @@
           </tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <!-- Bulk Import Modal -->
+  <div class="modal-overlay" id="import-lib-modal">
+    <div class="modal" style="width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Bulk Import Resources via CSV</h3>
+        <button class="modal-close" onclick="closeModal('import-lib-modal')">×</button>
+      </div>
+      <form id="import-lib-form" onsubmit="importLibraryCSV(event)">
+        <div style="padding: 16px;">
+          <p class="text-small text-muted mb-16">
+            Upload a CSV template to bulk insert training manuals, video paths, or transaction codes.
+            <br><br>
+            <strong>CSV Columns expected:</strong><br>
+            <code>Title, Description, Item_Type, Department_Code, Transaction_Code, File_Path, Video_Path</code>
+          </p>
+          <div class="form-group">
+            <label for="lib-csv-file">Select CSV File</label>
+            <input type="file" id="lib-csv-file" accept=".csv" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('import-lib-modal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Import CSV</button>
+        </div>
+      </form>
     </div>
   </div>
 

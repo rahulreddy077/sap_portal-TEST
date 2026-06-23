@@ -8,6 +8,17 @@
 </head>
 <body>
 
+  <!-- Global Search Results Panel -->
+  <div id="global-search-overlay" class="search-overlay-panel" style="display: none;">
+    <div class="search-overlay-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--border); background-color: var(--primary); color: #fff; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+      <h3 style="margin: 0; font-size: 1.05rem;">Global Portal Search Results</h3>
+      <button onclick="closeGlobalSearch()" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; line-height: 1;">×</button>
+    </div>
+    <div id="global-search-results-content" style="padding: 16px; max-height: 480px; overflow-y: auto;">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
   <!-- Stat Cards Grid -->
   <div class="stats-grid">
     <div class="stat-card info" style="cursor: pointer;" onclick="location.href='library.html'">

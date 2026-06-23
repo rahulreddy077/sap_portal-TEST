@@ -206,7 +206,7 @@ function renderLayout(activeId) {
           <img src="${logoPath}" alt="BHEL Logo" style="height: 38px; width: 38px; margin-right: 10px; border-radius: 4px; object-fit: contain;">
           <div>
             <span class="brand-name" style="font-size: 11px; font-weight: 700; display: block; color: var(--gold-primary); text-transform: uppercase; line-height: 1.2;">SAP Knowledge Management Portal</span>
-            <span class="brand-sub" style="font-size: 10px; opacity: 0.8; display: block; line-height: 1.2;">BHEL Ltd. Hyderabad</span>
+            <span class="brand-sub" style="font-size: 10px; opacity: 0.8; display: block; line-height: 1.2;">BHEL Hyderabad</span>
           </div>
         </div>
       </div>
@@ -216,15 +216,14 @@ function renderLayout(activeId) {
         ${user.department_name ? `<div class="user-dept">${user.department_name} · ${user.sap_module || ""}</div>` : ""}
       </div>
       <nav class="sidebar-nav">
-        <div class="nav-section">Main Menu</div>
         <a href="dashboard.html" class="nav-item ${activeId === 'dashboard' ? 'active' : ''}" id="nav-dashboard">
           <span class="nav-icon">📊</span> Dashboard
         </a>
         <a href="library.html" class="nav-item ${activeId === 'library' ? 'active' : ''}" id="nav-library">
-          <span class="nav-icon">📄</span> SAP Library
+          <span class="nav-icon">📁</span> SAP Library
         </a>
         <a href="query.html" class="nav-item ${activeId === 'query' ? 'active' : ''}" id="nav-query">
-          <span class="nav-icon">💬</span> Q&A Forum
+          <span class="nav-icon">💬</span> Forum Q&A
         </a>
         <a href="faqs.html" class="nav-item ${activeId === 'faqs' ? 'active' : ''}" id="nav-faqs">
           <span class="nav-icon">❓</span> FAQs
@@ -244,6 +243,10 @@ function renderLayout(activeId) {
   sidebarHtml += `
       </nav>
       <div class="sidebar-footer">
+        <div class="active-users-badge">
+          <span class="pulse-dot"></span>
+          <span id="active-users-count">Loading users...</span>
+        </div>
         <div class="nav-item" onclick="logout()">
           <span class="nav-icon">🚪</span> Sign Out
         </div>
@@ -387,6 +390,10 @@ async function clearAllNotifications() {
 
 function triggerPageSearch(query) {
   const q = query.trim().toLowerCase();
+  if (typeof triggerDashboardGlobalSearch === "function") {
+    triggerDashboardGlobalSearch(q);
+    return;
+  }
   if (typeof filterLibrary === "function") {
     filterLibrary(q);
   }
@@ -402,6 +409,18 @@ function triggerPageSearch(query) {
 }
 
 // ── Page Layout Auto Initialization ─────────────────────────────
+async function loadActiveUsersCount() {
+  try {
+    const data = await apiGet("/users/active-count");
+    const countEl = document.getElementById("active-users-count");
+    if (countEl) {
+      countEl.textContent = `${data.active_users} Active User${data.active_users !== 1 ? 's' : ''}`;
+    }
+  } catch (e) {
+    console.error("Failed to load active users count:", e);
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   const path = window.location.pathname;
   const page = path.substring(path.lastIndexOf('/') + 1).replace('.html', '');
@@ -414,6 +433,8 @@ window.addEventListener("DOMContentLoaded", () => {
     if (user) {
       renderLayout(page);
       loadNotifCount();
+      loadActiveUsersCount();
+      setInterval(loadActiveUsersCount, 45000);
       
       // Initialize shared visual event listeners
       const toggle = document.getElementById("sidebar-toggle");

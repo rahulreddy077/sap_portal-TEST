@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+frontend/uploads/
+.env
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+*.log
