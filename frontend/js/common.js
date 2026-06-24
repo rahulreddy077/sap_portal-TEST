@@ -314,7 +314,7 @@ function renderLayout(activeId) {
   const topbarHtml = `
     <header class="topbar" style="display: flex; align-items: center; justify-content: space-between;">
       <div style="display: flex; align-items: center; gap: 15px;">
-        <button class="icon-btn" id="sidebar-toggle">☰</button>
+        <button class="icon-btn" id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
         <h1 class="topbar-title">${title}</h1>
         ${user.department_name ? `<span class="topbar-module">${user.sap_module || "SAP"}</span>` : ""}
       </div>
@@ -389,23 +389,19 @@ function renderLayout(activeId) {
   const savedTheme = localStorage.getItem(THEME_KEY) || "device";
   applyTheme(savedTheme);
 
-  // ── Sidebar Toggle (hamburger ☰ button) ───────────────────────
-  const SIDEBAR_KEY = "bhel_sidebar_collapsed";
+  // Restore sidebar collapsed state (saved from previous page)
+  if (localStorage.getItem("bhel_sidebar_collapsed") === "true") {
+    const layout = document.querySelector(".layout");
+    if (layout) layout.classList.add("sidebar-collapsed");
+  }
+}
+
+// ── Sidebar Toggle ───────────────────────────────────────────
+function toggleSidebar() {
   const layout = document.querySelector(".layout");
-  const toggleBtn = document.getElementById("sidebar-toggle");
-
-  // Restore saved state immediately (no animation flash)
-  if (localStorage.getItem(SIDEBAR_KEY) === "true") {
-    layout.classList.add("sidebar-collapsed");
-  }
-
-  if (toggleBtn && layout) {
-    toggleBtn.addEventListener("click", function(e) {
-      e.stopPropagation();
-      const isNowCollapsed = layout.classList.toggle("sidebar-collapsed");
-      localStorage.setItem(SIDEBAR_KEY, isNowCollapsed);
-    });
-  }
+  if (!layout) return;
+  const isNowCollapsed = layout.classList.toggle("sidebar-collapsed");
+  localStorage.setItem("bhel_sidebar_collapsed", isNowCollapsed);
 }
 
 // ── Notification modal logic ──────────────────────────────────
