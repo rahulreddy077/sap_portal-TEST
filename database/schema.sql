@@ -192,13 +192,17 @@ CREATE TABLE IF NOT EXISTS audit_log (
 -- ============================================================
 
 -- INSERT INTO departments (department_name, sap_module) VALUES
--- ('Finance & Accounts',      'FI'),
--- ('Human Resources',         'HR'),
--- ('Materials Management',    'MM'),
--- ('Sales & Distribution',    'SD'),
--- ('Production Planning',     'PP'),
--- ('Project Systems',         'PS'),
--- ('Plant Maintenance',       'PM');
+-- ('Finance & Accounts',      'FI',    'Financial accounting, accounts payable/receivable, and general ledger'),
+-- ('Human Resources',         'HR',    'Personnel administration, payroll, time management and recruitment'),
+-- ('Materials Management',    'MM',    'Procurement, inventory management and warehouse operations'),
+-- ('Sales & Distribution',    'SD',    'Order management, billing, shipping and customer relations'),
+-- ('Production Planning',     'PP',    'Production orders, capacity planning and manufacturing execution'),
+-- ('Project Systems',         'PS',    'Project planning, budgeting, milestone tracking and WBS elements'),
+-- ('Plant Maintenance',       'PM',    'Equipment maintenance, work orders and breakdown management'),
+-- ('Costing Unit',            'CO',    'Controlling & Cost Accounting module for BHEL production costing'),
+-- ('Quality Management',      'QM',    'Quality inspection, quality planning and quality control operations'),
+-- ('Sub Contractor Mgmt',     'SubC',  'Sub-contractor work orders, billing and procurement management'),
+-- ('Basis Administration',    'Basis', 'SAP system administration, transport management and user authorizations');
 
 -- INSERT INTO users (employee_id, name, email, password_hash, role, department_id) VALUES
 -- ('ADMIN001', 'Super Admin', 'admin@bhel.in', 'Admin@123', 'SUPER_ADMIN', NULL);
