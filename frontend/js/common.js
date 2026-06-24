@@ -388,6 +388,24 @@ function renderLayout(activeId) {
   // Re-apply theme after DOM rebuild so button icon + active states are correct
   const savedTheme = localStorage.getItem(THEME_KEY) || "device";
   applyTheme(savedTheme);
+
+  // ── Sidebar Toggle (hamburger ☰ button) ───────────────────────
+  const SIDEBAR_KEY = "bhel_sidebar_collapsed";
+  const layout = document.querySelector(".layout");
+  const toggleBtn = document.getElementById("sidebar-toggle");
+
+  // Restore saved state immediately (no animation flash)
+  if (localStorage.getItem(SIDEBAR_KEY) === "true") {
+    layout.classList.add("sidebar-collapsed");
+  }
+
+  if (toggleBtn && layout) {
+    toggleBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      const isNowCollapsed = layout.classList.toggle("sidebar-collapsed");
+      localStorage.setItem(SIDEBAR_KEY, isNowCollapsed);
+    });
+  }
 }
 
 // ── Notification modal logic ──────────────────────────────────

@@ -283,7 +283,8 @@ img { max-width: 100%; }
   position: fixed;
   top: 0; left: 0; bottom: 0;
   z-index: 100;
-  transition: transform .25s;
+  transition: transform .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
 }
 .sidebar-header {
   padding: 18px 16px 16px;
@@ -381,6 +382,22 @@ img { max-width: 100%; }
   display: flex;
   flex-direction: column;
   min-width: 0;
+  transition: margin-left .28s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Sidebar Collapsed State ─────────────────────────────────── */
+.layout.sidebar-collapsed .sidebar {
+  transform: translateX(calc(-1 * var(--sidebar-w)));
+}
+.layout.sidebar-collapsed .main {
+  margin-left: 0;
+}
+/* Hamburger icon rotation when collapsed */
+.layout.sidebar-collapsed #sidebar-toggle {
+  transform: rotate(90deg);
+}
+#sidebar-toggle {
+  transition: transform .28s cubic-bezier(.4,0,.2,1) !important;
 }
 .topbar {
   height: var(--header-h);
