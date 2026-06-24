@@ -51,6 +51,21 @@ async function loadFaqs() {
     loadedFaqs = await apiGet(queryUrl);
     const container = document.getElementById("faqList");
 
+    const targetId = sessionStorage.getItem("faq_search_target_id");
+    if (targetId) {
+      const parsedId = parseInt(targetId);
+      if (!loadedFaqs.some(f => f.faq_id === parsedId)) {
+        try {
+          const targetFaq = await apiGet(`/faqs/${parsedId}`);
+          if (targetFaq && targetFaq.faq_id) {
+            loadedFaqs.unshift(targetFaq);
+          }
+        } catch (err) {
+          console.error("Could not fetch target FAQ:", err);
+        }
+      }
+    }
+
     if (loadedFaqs.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
@@ -90,6 +105,18 @@ async function loadFaqs() {
 
     // Bind click events for accordion behavior
     initLocalFaqAccordion();
+
+    // Expand and scroll to target if found
+    if (targetId) {
+      sessionStorage.removeItem("faq_search_target_id");
+      setTimeout(() => {
+        const item = document.getElementById(`faq-item-${targetId}`);
+        if (item) {
+          item.classList.add("open");
+          item.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+    }
 
   } catch (e) {
     console.error(e);

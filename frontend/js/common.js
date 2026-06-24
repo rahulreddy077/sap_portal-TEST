@@ -579,7 +579,7 @@ async function _runGlobalSearch(q) {
       html += `<div class="sdd-section-label">FAQs</div>`;
       faqSlice.forEach(faq => {
         html += `<a class="sdd-item" href="faqs.html"
-          onclick="sessionStorage.setItem('faq_search_target','${faq.question.replace(/'/g,"\\'")}')"
+          onclick="sessionStorage.setItem('faq_search_target_id','${faq.faq_id}')"
           title="FAQ">
           <span class="sdd-icon">❓</span>
           <span class="sdd-text">
@@ -598,7 +598,7 @@ async function _runGlobalSearch(q) {
       html += `<div class="sdd-section-label">Forum Q&amp;A</div>`;
       qSlice.forEach(qItem => {
         html += `<a class="sdd-item" href="query.html"
-          onclick="sessionStorage.setItem('query_search_target','${qItem.title.replace(/'/g,"\\'")}')"
+          onclick="sessionStorage.setItem('query_search_target_id','${qItem.query_id}')"
           title="FORUM">
           <span class="sdd-icon">💬</span>
           <span class="sdd-text">

@@ -883,6 +883,12 @@ def create_faq():
     return jsonify(faq.to_dict()), 201
 
 
+@app.route("/faqs/<int:faq_id>", methods=["GET"])
+def get_faq(faq_id):
+    faq = FAQ.query.get_or_404(faq_id)
+    return jsonify(faq.to_dict())
+
+
 @app.route("/faqs/<int:faq_id>", methods=["PUT"])
 def update_faq(faq_id):
     faq  = FAQ.query.get_or_404(faq_id)

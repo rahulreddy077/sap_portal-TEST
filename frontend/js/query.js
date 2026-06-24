@@ -51,6 +51,21 @@ async function loadQueries() {
     const list = await apiGet(queryUrl);
     const container = document.getElementById("queryList");
 
+    const targetId = sessionStorage.getItem("query_search_target_id");
+    if (targetId) {
+      const parsedId = parseInt(targetId);
+      if (!list.some(q => q.query_id === parsedId)) {
+        try {
+          const targetQuery = await apiGet(`/queries/${parsedId}?role=${user.role}`);
+          if (targetQuery && targetQuery.query_id) {
+            list.unshift(targetQuery);
+          }
+        } catch (err) {
+          console.error("Could not fetch target query:", err);
+        }
+      }
+    }
+
     if (list.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
@@ -65,7 +80,7 @@ async function loadQueries() {
       const statusClass = { OPEN: "status-open", ANSWERED: "status-answered", CLOSED: "status-closed" }[q.status] || "";
 
       return `
-        <div class="query-item ${statusClass}" onclick="viewQuery(${q.query_id})">
+        <div class="query-item ${statusClass}" id="query-item-${q.query_id}" onclick="viewQuery(${q.query_id})">
           <div class="query-item-header">
             <h4 class="query-title">${q.title}</h4>
             <span class="badge ${priorityCls}">${q.priority}</span>
@@ -81,6 +96,12 @@ async function loadQueries() {
         </div>
       `;
     }).join('');
+
+    // If there is a target query, display it automatically
+    if (targetId) {
+      sessionStorage.removeItem("query_search_target_id");
+      viewQuery(parseInt(targetId));
+    }
 
   } catch (e) {
     console.error(e);
