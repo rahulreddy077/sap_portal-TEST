@@ -58,19 +58,29 @@
 [data-theme="dark"] .form-group input,
 [data-theme="dark"] .form-group select,
 [data-theme="dark"] .form-group textarea {
-  background: #0f1117;
-  color: var(--text);
-  border-color: var(--border);
+  background: #1a2235 !important;
+  color: #e2e8f0 !important;
+  border-color: #2a3244 !important;
 }
 [data-theme="dark"] .filter-bar { background: var(--card-bg); border-color: var(--border); }
+/* Cover ALL inputs, selects, textareas regardless of parent context */
+[data-theme="dark"] input,
 [data-theme="dark"] input[type="text"],
 [data-theme="dark"] input[type="email"],
 [data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="file"],
 [data-theme="dark"] select,
 [data-theme="dark"] textarea {
-  background: #252d3d;
-  color: var(--text);
-  border-color: var(--border);
+  background: #1a2235 !important;
+  color: #e2e8f0 !important;
+  border-color: #2a3244 !important;
+}
+/* Select options dropdown */
+[data-theme="dark"] select option {
+  background: #1a2235;
+  color: #e2e8f0;
 }
 [data-theme="dark"] .topbar-search input { background: #252d3d; color: var(--text); border-color: var(--border); }
 [data-theme="dark"] .faq-item { background: #1e2535; border-color: var(--border); }
