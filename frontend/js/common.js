@@ -517,8 +517,26 @@ async function _runGlobalSearch(q) {
     let html = "";
     let totalCount = 0;
 
+    // ── Client-side relevance filter (safety net if backend returns unfiltered results) ──
+    const qLower = q.toLowerCase();
+    const qWords = qLower.split(/\s+/).filter(w => w.length > 1);
+    const matchesText = (...fields) => {
+      const combined = fields.join(" ").toLowerCase();
+      return qWords.every(word => combined.includes(word)) || combined.includes(qLower);
+    };
+
+    const filteredLibrary = library.filter(i =>
+      matchesText(i.title, i.description || "", i.transaction_code || "")
+    );
+    const filteredFaqs = faqs.filter(f =>
+      matchesText(f.question, f.answer)
+    );
+    const filteredQueries = queries.filter(qi =>
+      matchesText(qi.title, qi.body || "")
+    );
+
     // SAP Manuals & Media
-    const docs = library.filter(i => i.item_type !== "TRANSACTION").slice(0, 4);
+    const docs = filteredLibrary.filter(i => i.item_type !== "TRANSACTION").slice(0, 4);
     if (docs.length) {
       totalCount += docs.length;
       html += `<div class="sdd-section-label">SAP Manuals &amp; Media</div>`;
@@ -537,7 +555,7 @@ async function _runGlobalSearch(q) {
     }
 
     // T-Codes
-    const tcodes = library.filter(i => i.item_type === "TRANSACTION").slice(0, 3);
+    const tcodes = filteredLibrary.filter(i => i.item_type === "TRANSACTION").slice(0, 3);
     if (tcodes.length) {
       totalCount += tcodes.length;
       html += `<div class="sdd-section-label">Transaction Codes</div>`;
@@ -555,7 +573,7 @@ async function _runGlobalSearch(q) {
     }
 
     // FAQs
-    const faqSlice = faqs.slice(0, 3);
+    const faqSlice = filteredFaqs.slice(0, 3);
     if (faqSlice.length) {
       totalCount += faqSlice.length;
       html += `<div class="sdd-section-label">FAQs</div>`;
@@ -574,7 +592,7 @@ async function _runGlobalSearch(q) {
     }
 
     // Forum Q&A
-    const qSlice = queries.slice(0, 3);
+    const qSlice = filteredQueries.slice(0, 3);
     if (qSlice.length) {
       totalCount += qSlice.length;
       html += `<div class="sdd-section-label">Forum Q&amp;A</div>`;
