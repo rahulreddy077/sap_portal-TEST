@@ -319,8 +319,12 @@ function renderLayout(activeId) {
         ${user.department_name ? `<span class="topbar-module">${user.sap_module || "SAP"}</span>` : ""}
       </div>
       
-      <div class="topbar-search" style="flex: 1; max-width: 400px; margin: 0 20px; position: relative;">
-        <input type="text" id="global-search" placeholder="Search page content..." oninput="triggerPageSearch(this.value)">
+      <div class="topbar-search" style="flex: 1; max-width: 440px; margin: 0 20px; position: relative;">
+        <input type="text" id="global-search" placeholder="Search manuals, FAQs, T-codes..."
+          oninput="triggerPageSearch(this.value)"
+          onkeydown="if(event.key==='Escape'){closeGlobalSearch();}"
+          autocomplete="off">
+        <div id="global-search-dropdown" class="search-dropdown" style="display:none;"></div>
       </div>
       
       <div class="topbar-actions">
@@ -477,25 +481,140 @@ async function clearAllNotifications() {
   }
 }
 
+// ── Global Search: dropdown below the search bar ─────────────
+let _searchTimer = null;
+
 function triggerPageSearch(query) {
-  const q = query.trim().toLowerCase();
-  if (typeof triggerDashboardGlobalSearch === "function") {
-    triggerDashboardGlobalSearch(q);
+  clearTimeout(_searchTimer);
+  const q = query.trim();
+  const dd = document.getElementById("global-search-dropdown");
+  if (!dd) return;
+
+  if (!q) {
+    dd.style.display = "none";
+    dd.innerHTML = "";
     return;
   }
-  if (typeof filterLibrary === "function") {
-    filterLibrary(q);
-  }
-  if (typeof filterQueries === "function") {
-    filterQueries(q);
-  }
-  if (typeof filterFAQs === "function") {
-    filterFAQs(q);
-  }
-  if (typeof filterUsers === "function") {
-    filterUsers(q);
+
+  // Show loading state immediately
+  dd.style.display = "block";
+  dd.innerHTML = `<div class="sdd-loading"><span class="spinner" style="width:18px;height:18px;border-width:2px;"></span> Searching...</div>`;
+
+  // Debounce 300ms
+  _searchTimer = setTimeout(() => _runGlobalSearch(q), 300);
+}
+
+async function _runGlobalSearch(q) {
+  const dd = document.getElementById("global-search-dropdown");
+  if (!dd) return;
+  try {
+    const [library, queries, faqs] = await Promise.all([
+      apiGet(`/library?search=${encodeURIComponent(q)}`).catch(() => []),
+      apiGet(`/queries?search=${encodeURIComponent(q)}`).catch(() => []),
+      apiGet(`/faqs?search=${encodeURIComponent(q)}`).catch(() => [])
+    ]);
+
+    let html = "";
+    let totalCount = 0;
+
+    // SAP Manuals & Media
+    const docs = library.filter(i => i.item_type !== "TRANSACTION").slice(0, 4);
+    if (docs.length) {
+      totalCount += docs.length;
+      html += `<div class="sdd-section-label">SAP Manuals &amp; Media</div>`;
+      docs.forEach(item => {
+        html += `<a class="sdd-item" href="library.html"
+          onclick="sessionStorage.setItem('library_search_target','${item.title.replace(/'/g,"\\'")}')"
+          title="${item.item_type}">
+          <span class="sdd-icon">📄</span>
+          <span class="sdd-text">
+            <span class="sdd-title">${item.title}</span>
+            <span class="sdd-sub">${item.description ? item.description.substring(0,70) : ''}</span>
+          </span>
+          <span class="sdd-badge">${item.item_type}</span>
+        </a>`;
+      });
+    }
+
+    // T-Codes
+    const tcodes = library.filter(i => i.item_type === "TRANSACTION").slice(0, 3);
+    if (tcodes.length) {
+      totalCount += tcodes.length;
+      html += `<div class="sdd-section-label">Transaction Codes</div>`;
+      tcodes.forEach(item => {
+        html += `<a class="sdd-item" href="library.html"
+          onclick="sessionStorage.setItem('library_search_target','${item.title.replace(/'/g,"\\'")}')"
+          title="T-CODE">
+          <span class="sdd-icon">🔧</span>
+          <span class="sdd-text">
+            <span class="sdd-title">${item.transaction_code} — ${item.title}</span>
+          </span>
+          <span class="sdd-badge" style="background:#e0edff;color:#003d82;">T-CODE</span>
+        </a>`;
+      });
+    }
+
+    // FAQs
+    const faqSlice = faqs.slice(0, 3);
+    if (faqSlice.length) {
+      totalCount += faqSlice.length;
+      html += `<div class="sdd-section-label">FAQs</div>`;
+      faqSlice.forEach(faq => {
+        html += `<a class="sdd-item" href="faqs.html"
+          onclick="sessionStorage.setItem('faq_search_target','${faq.question.replace(/'/g,"\\'")}')"
+          title="FAQ">
+          <span class="sdd-icon">❓</span>
+          <span class="sdd-text">
+            <span class="sdd-title">${faq.question}</span>
+            <span class="sdd-sub">${faq.answer.substring(0, 70)}...</span>
+          </span>
+          <span class="sdd-badge" style="background:#e8f5e9;color:#2e7d32;">FAQ</span>
+        </a>`;
+      });
+    }
+
+    // Forum Q&A
+    const qSlice = queries.slice(0, 3);
+    if (qSlice.length) {
+      totalCount += qSlice.length;
+      html += `<div class="sdd-section-label">Forum Q&amp;A</div>`;
+      qSlice.forEach(qItem => {
+        html += `<a class="sdd-item" href="query.html"
+          onclick="sessionStorage.setItem('query_search_target','${qItem.title.replace(/'/g,"\\'")}')"
+          title="FORUM">
+          <span class="sdd-icon">💬</span>
+          <span class="sdd-text">
+            <span class="sdd-title">${qItem.title}</span>
+            <span class="sdd-sub">${qItem.status}</span>
+          </span>
+          <span class="sdd-badge" style="background:#fff3e0;color:#e65100;">FORUM</span>
+        </a>`;
+      });
+    }
+
+    if (totalCount === 0) {
+      html = `<div class="sdd-empty">No results found for "<strong>${q}</strong>"</div>`;
+    }
+
+    dd.innerHTML = html;
+    dd.style.display = "block";
+  } catch(err) {
+    dd.innerHTML = `<div class="sdd-empty">Search failed. Please try again.</div>`;
   }
 }
+
+function closeGlobalSearch() {
+  const dd = document.getElementById("global-search-dropdown");
+  const inp = document.getElementById("global-search");
+  if (dd) { dd.style.display = "none"; dd.innerHTML = ""; }
+  if (inp) inp.value = "";
+}
+
+// Close dropdown on outside click
+document.addEventListener("click", e => {
+  const wrap = document.querySelector(".topbar-search");
+  if (wrap && !wrap.contains(e.target)) closeGlobalSearch();
+});
 
 // ── Page Layout Auto Initialization ─────────────────────────────
 async function loadActiveUsersCount() {

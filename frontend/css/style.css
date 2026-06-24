@@ -955,7 +955,7 @@ tbody tr:hover { background: #f5f8ff; }
 .topbar-search input:focus {
   outline: none;
   border-color: var(--primary);
-  background-color: #fff;
+  background-color: var(--card-bg);
 }
 
 /* Active Users Badge in Sidebar Footer */
@@ -982,60 +982,116 @@ tbody tr:hover { background: #f5f8ff; }
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
 }
 
-/* Global Search Overlay Panel styles */
-.search-overlay-panel {
+/* ── Global Search Dropdown (Chrome-style, below search bar) ─── */
+.search-dropdown {
   position: absolute;
-  top: 10px;
-  left: 20px;
-  right: 20px;
-  background-color: #fff;
-  border-radius: var(--radius);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  border: 1px solid var(--border);
-  z-index: 1000;
-  animation: fadeIn .2s ease;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.10);
+  z-index: 9999;
+  max-height: 420px;
+  overflow-y: auto;
+  animation: sddFadeIn .15s ease;
 }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sddFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-.global-search-section {
-  margin-bottom: 20px;
-}
-.global-search-section h4 {
-  font-size: 0.95rem;
-  color: var(--primary);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 6px;
-  margin-bottom: 10px;
-  text-transform: uppercase;
+/* Section headers */
+.sdd-section-label {
+  padding: 8px 16px 4px;
+  font-size: .7rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-light);
+  border-top: 1px solid var(--border);
 }
-.global-search-item {
-  padding: 8px 12px;
-  border-radius: 4px;
-  transition: background-color .15s;
+.sdd-section-label:first-child { border-top: none; }
+
+/* Each result row */
+.sdd-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
-  border: 1px solid transparent;
-}
-.global-search-item:hover {
-  background-color: var(--bg);
-  border-color: var(--border);
-}
-.global-search-link {
+  gap: 10px;
+  padding: 9px 16px;
   text-decoration: none;
   color: var(--text);
-  font-size: 0.9rem;
-  display: block;
-  flex: 1;
+  transition: background .12s;
+  cursor: pointer;
 }
-.global-search-type {
-  font-size: 0.75rem;
+.sdd-item:hover { background: var(--bg); }
+
+.sdd-icon {
+  font-size: 1rem;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.sdd-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.sdd-title {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sdd-sub {
+  font-size: .76rem;
   color: var(--text-light);
-  background-color: var(--bg-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sdd-badge {
+  font-size: .68rem;
+  font-weight: 700;
   padding: 2px 8px;
   border-radius: 10px;
-  margin-left: 10px;
-}
+  background: var(--bg);
+  color: var(--text-light);
+  flex-shrink: 0;
+  letter-spacing: .04em;
+}
+
+/* Loading & empty states */
+.sdd-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  color: var(--text-light);
+  font-size: .88rem;
+}
+.sdd-empty {
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: .88rem;
+}
+
+/* Dark mode dropdown */
+[data-theme="dark"] .search-dropdown {
+  background: #1e2535;
+  border-color: #2a3244;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+[data-theme="dark"] .sdd-item:hover { background: #252d3d; }
+[data-theme="dark"] .sdd-section-label { border-color: #2a3244; }
+[data-theme="dark"] .sdd-badge { background: #252d3d; }
+
+/* Focus: keep search input bg correct in dark mode */
+[data-theme="dark"] .topbar-search input:focus { background: #252d3d !important; }
+
