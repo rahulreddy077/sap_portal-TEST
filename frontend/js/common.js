@@ -528,13 +528,7 @@ window.addEventListener("DOMContentLoaded", () => {
       loadNotifCount();
       loadActiveUsersCount();
       setInterval(loadActiveUsersCount, 45000);
-      
-      // Initialize shared visual event listeners
-      const toggle = document.getElementById("sidebar-toggle");
-      const sidebar = document.querySelector(".sidebar");
-      if (toggle && sidebar) {
-        toggle.addEventListener("click", () => sidebar.classList.toggle("open"));
-      }
+      // Note: sidebar toggle is handled inside renderLayout()
     }
   }
 });
